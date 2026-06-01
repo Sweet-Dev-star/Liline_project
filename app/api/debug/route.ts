@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/db";
 import { lineClient } from "@/src/lib/line/client";
+import { serverEnv } from "@/src/config/env";
 
-// Local-only inspection endpoint (remove/guard before production).
+// Diagnostic endpoint — guarded by CRON_SECRET so it isn't public.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
+
+  // auth: require ?secret=<CRON_SECRET> (reuse the existing secret)
+  const secret = serverEnv.cronSecret;
+  if (secret && url.searchParams.get("secret") !== secret) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
 
   if (url.searchParams.get("check") === "line") {
     const tok = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "";
@@ -20,7 +27,6 @@ export async function GET(req: Request) {
     }
   }
 
-  // ?check=env -> show which asset/config env vars the server actually sees
   if (url.searchParams.get("check") === "env") {
     return NextResponse.json({
       mainVideo: process.env.NEXT_PUBLIC_MAIN_VIDEO_URL ?? "(unset)",

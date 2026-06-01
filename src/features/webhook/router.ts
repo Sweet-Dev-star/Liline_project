@@ -2,6 +2,7 @@ import type { WebhookEvent } from "@line/bot-sdk";
 import { handleFollow } from "./handlers/follow";
 import { handleMessage } from "./handlers/message";
 import { handleUnfollow } from "./handlers/unfollow";
+import { handlePostback } from "./handlers/postback";
 
 /**
  * Routes a batch of webhook events to their handlers.
@@ -20,6 +21,8 @@ async function routeOne(event: WebhookEvent): Promise<void> {
       return handleUnfollow(event);
     case "message":
       return handleMessage(event);
+    case "postback":
+      return handlePostback(event);
     default:
       console.log(`[webhook] unhandled event type: ${event.type}`);
   }

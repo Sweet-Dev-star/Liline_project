@@ -16,3 +16,8 @@ export function lineClient(): messagingApi.MessagingApiClient {
   cached = { token, client };
   return client;
 }
+
+/** Blob client for binary uploads (rich menu images). */
+export const lineBlobClient = new messagingApi.MessagingApiBlobClient({
+  channelAccessToken: serverEnv.lineChannelAccessToken,
+});
