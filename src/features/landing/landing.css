@@ -121,6 +121,83 @@
   font-size:12px; font-family:system-ui,sans-serif; letter-spacing:.06em;
   border-top:1px solid rgba(255,255,255,.06); }
 
+/* ---------- top navigation (shared) ---------- */
+.nav{ position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center;
+  justify-content:space-between; padding:18px clamp(20px,5vw,48px);
+  font-family:system-ui,sans-serif; transition:background .4s, backdrop-filter .4s, border-color .4s;
+  border-bottom:1px solid transparent; }
+.nav.scrolled{ background:rgba(8,15,26,.78); backdrop-filter:blur(12px); border-bottom-color:rgba(201,162,39,.18); }
+.nav .brand{ color:var(--gold); font-weight:700; letter-spacing:.28em; font-size:13px; text-decoration:none; white-space:nowrap; }
+.nav .links{ display:flex; align-items:center; gap:clamp(14px,3vw,30px); }
+.nav .links a{ position:relative; color:var(--ink); text-decoration:none; font-size:13px; letter-spacing:.14em;
+  padding:6px 2px; opacity:.85; transition:opacity .3s, color .3s; }
+.nav .links a:hover{ opacity:1; color:var(--goldsoft); }
+.nav .links a::after{ content:""; position:absolute; left:0; right:100%; bottom:0; height:1px;
+  background:var(--gold); transition:right .35s cubic-bezier(.16,.7,.2,1); }
+.nav .links a:hover::after{ right:0; }
+.nav .links a.cta-mini{ color:#1a1407; background:linear-gradient(135deg,var(--goldsoft),var(--gold));
+  padding:9px 20px; border-radius:999px; font-weight:800; letter-spacing:.06em; opacity:1; }
+.nav .links a.cta-mini::after{ display:none; }
+.nav .links a.cta-mini:hover{ transform:translateY(-1px); color:#1a1407; }
+@media (max-width:560px){
+  .nav .brand{ font-size:11px; letter-spacing:.18em; }
+  .nav .links a:not(.cta-mini){ display:none; }   /* keep only the CTA on tiny screens */
+}
+
+/* ---------- inner page shell (about/contact/faq) ---------- */
+.page-hero{ position:relative; padding:150px 24px 60px; text-align:center; }
+.page-hero .eyebrow{ color:var(--gold); letter-spacing:.5em; font-size:11px; font-weight:700;
+  font-family:system-ui,sans-serif; }
+.page-hero h1{ font-size:clamp(28px,6vw,46px); letter-spacing:.08em; font-weight:600; margin:16px 0 0; line-height:1.5; }
+.page-hero .rule{ width:200px; height:1px; margin:26px auto 0;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+.page-body{ max-width:780px; margin:0 auto; padding:30px 24px 110px; }
+
+/* prose blocks */
+.prose p{ color:#C2CBDA; line-height:2.25; font-size:15px; font-family:system-ui,sans-serif; margin:0 0 22px; }
+.prose .big{ font-size:clamp(18px,3vw,22px); line-height:2; color:var(--ink); font-weight:600;
+  letter-spacing:.04em; margin:0 0 28px; text-align:center; }
+.prose h3{ font-size:18px; letter-spacing:.05em; margin:44px 0 14px; color:var(--ink); display:flex; align-items:center; gap:12px; }
+.prose h3::before{ content:""; width:22px; height:2px; background:var(--gold); flex:none; }
+
+/* value list (about) */
+.values{ display:grid; gap:16px; margin-top:30px; }
+.value{ display:flex; gap:18px; padding:24px 26px; border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid rgba(255,255,255,.08); transition:transform .4s, border-color .4s, box-shadow .4s; }
+.value:hover{ transform:translateY(-5px); border-color:var(--gold); box-shadow:0 20px 50px rgba(0,0,0,.4); }
+.value .vn{ font-family:"Hiragino Mincho ProN",serif; color:var(--gold); font-size:26px; font-weight:700; flex:none; line-height:1.4; }
+.value h4{ margin:0 0 8px; font-size:16px; letter-spacing:.04em; }
+.value p{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.95; font-family:system-ui,sans-serif; }
+
+/* faq accordion-ish list */
+.faqs{ margin-top:34px; }
+.faq{ border-top:1px solid rgba(255,255,255,.1); padding:26px 4px; }
+.faq:last-child{ border-bottom:1px solid rgba(255,255,255,.1); }
+.faq .q{ display:flex; gap:14px; font-size:16px; letter-spacing:.03em; color:var(--ink); align-items:flex-start; }
+.faq .q .mark{ color:var(--gold); font-family:"Hiragino Mincho ProN",serif; font-size:20px; font-weight:700; line-height:1.4; flex:none; }
+.faq .a{ display:flex; gap:14px; margin-top:14px; }
+.faq .a .mark{ color:var(--faint); font-family:"Hiragino Mincho ProN",serif; font-size:20px; font-weight:700; line-height:1.7; flex:none; }
+.faq .a p{ margin:0; color:var(--muted); line-height:2.1; font-size:14px; font-family:system-ui,sans-serif; }
+
+/* contact */
+.contact-card{ margin-top:34px; padding:40px 32px; border-radius:20px; text-align:center;
+  background:linear-gradient(165deg,rgba(255,255,255,.06),rgba(255,255,255,.015));
+  border:1px solid rgba(201,162,39,.28); }
+.contact-card .lbl{ color:var(--gold); letter-spacing:.35em; font-size:11px; font-weight:700; font-family:system-ui,sans-serif; }
+.contact-card h3{ justify-content:center; margin-top:14px; }
+.contact-card h3::before{ display:none; }
+.contact-methods{ display:grid; gap:14px; margin-top:28px; text-align:left; }
+.cmethod{ display:flex; align-items:center; gap:16px; padding:18px 22px; border-radius:14px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); }
+.cmethod .ci{ width:42px; height:42px; border-radius:50%; flex:none; display:flex; align-items:center;
+  justify-content:center; background:rgba(201,162,39,.15); color:var(--gold); font-size:18px; }
+.cmethod .ct b{ display:block; font-family:system-ui,sans-serif; font-size:14px; letter-spacing:.04em; }
+.cmethod .ct span{ color:var(--muted); font-size:12.5px; font-family:system-ui,sans-serif; }
+.backhome{ display:inline-block; margin-top:50px; color:var(--muted); text-decoration:none;
+  font-family:system-ui,sans-serif; font-size:13px; letter-spacing:.08em; transition:color .3s; }
+.backhome:hover{ color:var(--goldsoft); }
+
 @media (prefers-reduced-motion: reduce){
   .lp *{ animation:none !important; transition:none !important; }
   .r{ opacity:1; transform:none; filter:none; }

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import "./landing.css";
+import { SiteNav } from "./SiteNav";
 
 const LINE_ADD_URL = "https://line.me/R/ti/p/@169yaiam";
 
@@ -26,6 +27,7 @@ export function LandingPage() {
     <div className="lp">
       {/* one shared animated background for the entire page */}
       <div className="lp-bg" aria-hidden />
+      <SiteNav />
 
       <div className="lp-wrap">
         {/* ---------- HERO ---------- */}
