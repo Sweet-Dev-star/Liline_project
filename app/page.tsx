@@ -1,11 +1,11 @@
+import { LandingPage } from "@/src/features/landing/LandingPage";
+
+export const metadata = {
+  title: "TAX STRATEGY LAB｜富裕層のための資産戦略診断",
+  description:
+    "税理士が監修。税務と運用の両面から、あなたに最適な資産防衛の一手を無料で診断。30秒・3つの質問に答えるだけ。",
+};
+
 export default function Home() {
-  return (
-    <main style={{ maxWidth: 560, margin: "0 auto", padding: 24 }}>
-      <p style={{ letterSpacing: 4, color: "#b8943f", fontWeight: 700, fontSize: 14 }}>
-        TAX STRATEGY LAB
-      </p>
-      <h1>v2 — Next.js unified build</h1>
-      <p>Step 1: webhook handshake. (Public simulator comes in a later step.)</p>
-    </main>
-  );
+  return <LandingPage />;
 }
