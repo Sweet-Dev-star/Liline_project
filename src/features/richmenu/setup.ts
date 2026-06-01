@@ -18,6 +18,9 @@ export async function setupRichMenu(): Promise<{ richMenuId: string }> {
     await client.deleteRichMenu(m.richMenuId).catch(() => undefined);
   }
 
+  // rich menu tap areas open the public web pages
+  const base = serverEnv.publicBaseUrl;
+
   // 2500x843 = compact rich menu; 3 columns of ~833px
   const richMenuId = (
     await client.createRichMenu({
@@ -27,16 +30,19 @@ export async function setupRichMenu(): Promise<{ richMenuId: string }> {
       chatBarText: "メニュー",
       areas: [
         {
+          // left = FAQ -> /faq page
           bounds: { x: 0, y: 0, width: 833, height: 843 },
-          action: { type: "postback", data: "menu=faq", displayText: "よくある質問" },
+          action: { type: "uri", label: "FAQ", uri: `${base}/faq` },
         },
         {
+          // middle = ABOUT -> /about page
           bounds: { x: 833, y: 0, width: 834, height: 843 },
-          action: { type: "postback", data: "menu=about", displayText: "運営者について" },
+          action: { type: "uri", label: "ABOUT", uri: `${base}/about` },
         },
         {
+          // right = CONTACT -> /contact page
           bounds: { x: 1667, y: 0, width: 833, height: 843 },
-          action: { type: "postback", data: "menu=contact", displayText: "お問い合わせ" },
+          action: { type: "uri", label: "CONTACT", uri: `${base}/contact` },
         },
       ],
     })
