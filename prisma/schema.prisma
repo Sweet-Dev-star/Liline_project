@@ -1,6 +1,9 @@
 // Production-grade Postgres schema (Neon). Used for both local dev and Vercel.
 generator client {
   provider = "prisma-client-js"
+  // include the Linux runtime Netlify/Vercel functions use (debian openssl 3.x),
+  // alongside the local native target, so the engine exists in the deploy bundle.
+  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
