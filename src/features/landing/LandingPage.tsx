@@ -10,8 +10,14 @@ export function LandingPage() {
   useEffect(() => {
     const els = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
     const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
-      { threshold: 0.15 }
+      (entries) =>
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("in");
+            io.unobserve(e.target); // animate once
+          }
+        }),
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
@@ -37,30 +43,32 @@ export function LandingPage() {
       </header>
 
       {/* ---------- PROBLEM ---------- */}
-      <section className="lp-sec">
-        <p className="kicker reveal">PROBLEM</p>
-        <h2 className="reveal">こんな“見えないリスク”はありませんか</h2>
-        <p className="lp-lead reveal">
-          多忙な経営者・資産家ほど、資産の最適化は後回しになりがちです。気づかぬうちに、大きな差が生まれています。
-        </p>
-        <div className="lp-grid">
-          <div className="lp-card reveal"><div className="num">01</div><h3>税負担の最適化</h3><p>本業に集中するあまり、合法的に圧縮できる税が放置されていませんか。</p></div>
-          <div className="lp-card reveal"><div className="num">02</div><h3>運用の機会損失</h3><p>「なんとなく」の運用で、本来得られたはずのリターンを逃していませんか。</p></div>
-          <div className="lp-card reveal"><div className="num">03</div><h3>守りの設計不足</h3><p>増やすことばかりで、資産を“守り抜く”設計が後回しになっていませんか。</p></div>
+      <section className="lp-problem">
+        <div className="lp-sec">
+          <p className="kicker reveal">PROBLEM</p>
+          <h2 className="reveal d1">こんな“見えないリスク”はありませんか</h2>
+          <p className="lp-lead reveal d2">
+            多忙な経営者・資産家ほど、資産の最適化は後回しになりがちです。気づかぬうちに、大きな差が生まれています。
+          </p>
+          <div className="lp-grid">
+            <div className="lp-card reveal d1"><div className="num">01</div><h3>税負担の最適化</h3><p>本業に集中するあまり、合法的に圧縮できる税が放置されていませんか。</p></div>
+            <div className="lp-card reveal d2"><div className="num">02</div><h3>運用の機会損失</h3><p>「なんとなく」の運用で、本来得られたはずのリターンを逃していませんか。</p></div>
+            <div className="lp-card reveal d3"><div className="num">03</div><h3>守りの設計不足</h3><p>増やすことばかりで、資産を“守り抜く”設計が後回しになっていませんか。</p></div>
+          </div>
         </div>
       </section>
 
       {/* ---------- FLOW ---------- */}
-      <section className="lp-band">
+      <section className="lp-flowband">
         <div className="lp-sec">
           <p className="kicker reveal">HOW IT WORKS</p>
-          <h2 className="reveal">最適な一手が分かるまで、たった3ステップ</h2>
+          <h2 className="reveal d1">最適な一手が分かるまで、たった3ステップ</h2>
           <div className="lp-flow">
-            <div className="lp-step reveal"><div className="idx">1</div><span>LINEで友だち追加（無料）</span></div>
+            <div className="lp-step reveal d1"><div className="idx">1</div><span>LINEで友だち追加（無料）</span></div>
             <div className="lp-arrow reveal">▼</div>
-            <div className="lp-step reveal"><div className="idx">2</div><span>動画を視聴し、3つの質問に回答</span></div>
+            <div className="lp-step reveal d2"><div className="idx">2</div><span>動画を視聴し、3つの質問に回答</span></div>
             <div className="lp-arrow reveal">▼</div>
-            <div className="lp-step reveal"><div className="idx">3</div><span>あなたに最適なご案内が届く</span></div>
+            <div className="lp-step reveal d3"><div className="idx">3</div><span>あなたに最適なご案内が届く</span></div>
           </div>
         </div>
       </section>
@@ -68,14 +76,14 @@ export function LandingPage() {
       {/* ---------- OUTCOMES ---------- */}
       <section className="lp-sec">
         <p className="kicker reveal">FOR YOU</p>
-        <h2 className="reveal">あなたに合った“出口”をご用意</h2>
+        <h2 className="reveal d1">あなたに合った“出口”をご用意</h2>
         <div className="lp-out">
-          <div className="lp-out-card reveal">
+          <div className="lp-out-card reveal d1">
             <span className="tag">EXCLUSIVE</span>
             <h3>全資産の最適化コンサル</h3>
             <p>一定基準を満たす方へ。超一流のプロに、税務と運用を横断した資産防衛を託す道。</p>
           </div>
-          <div className="lp-out-card reveal">
+          <div className="lp-out-card reveal d2">
             <span className="tag">GATEWAY</span>
             <h3>本物の富裕層への登竜門</h3>
             <p>これから資産を築く方へ。金融機関の“カモ”にならない、一生モノの教養を学ぶ道。</p>
@@ -86,11 +94,11 @@ export function LandingPage() {
       {/* ---------- FINAL CTA ---------- */}
       <section className="lp-final">
         <p className="kicker reveal" style={{ color: "#E7C45A" }}>START NOW</p>
-        <h2 className="reveal">まずは、あなたの“今”を知ることから。</h2>
-        <p className="lp-lead reveal" style={{ color: "#C7CDD6" }}>
+        <h2 className="reveal d1">まずは、あなたの“今”を知ることから。</h2>
+        <p className="lp-lead reveal d2" style={{ color: "#C7CDD6" }}>
           診断は無料、しつこい勧誘は一切ありません。30秒で、あなたに最適な次の一歩が見つかります。
         </p>
-        <div className="reveal" style={{ marginTop: 36 }}>
+        <div className="reveal d2" style={{ marginTop: 36 }}>
           <a className="lp-cta" href={LINE_ADD_URL}>LINEで無料診断を受け取る</a>
         </div>
       </section>
