@@ -1,0 +1,73 @@
+// Production-grade Postgres schema (Neon). Used for both local dev and Vercel.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String             @id // LINE userId (Uxxxx)
+  displayName  String?
+  pictureUrl   String?
+  status       String             @default("active") // active | blocked
+  branch       String? // ifa | school | nurture
+  registeredAt DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  tags         UserTag[]
+  surveys      SurveyResponse[]
+  scheduled    ScheduledMessage[]
+
+  @@index([branch])
+  @@index([status])
+}
+
+model UserTag {
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  tag    String
+
+  @@unique([userId, tag])
+  @@index([tag])
+}
+
+model SurveyResponse {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  assets    String
+  income    String
+  stance    String
+  branch    String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ScheduledMessage {
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  branch      String
+  step        Int
+  scheduledAt DateTime
+  status      String    @default("pending") // pending | sending | sent | cancelled | failed
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, branch, step])
+  @@index([status, scheduledAt])
+}
+
+model EventLog {
+  id        Int      @id @default(autoincrement())
+  type      String
+  userId    String?
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([type])
+}
