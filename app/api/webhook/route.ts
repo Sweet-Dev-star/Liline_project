@@ -20,6 +20,8 @@ export async function POST(req: Request) {
   }
 
   const body = JSON.parse(raw) as WebhookRequestBody;
+  // log delivered event types so we can see exactly what LINE sends (Netlify function logs)
+  console.log("[webhook] received:", body.events.map((e) => e.type).join(",") || "(none)");
   await routeEvents(body.events);
 
   return NextResponse.json({ ok: true });
