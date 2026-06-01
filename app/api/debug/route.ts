@@ -11,11 +11,14 @@ export async function GET(req: Request) {
 
   // ?check=line -> verify the DEPLOYED access token can call the LINE API
   if (url.searchParams.get("check") === "line") {
+    const tok = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "";
+    // safe fingerprint: length + first/last 4 chars (never the full secret)
+    const fp = tok ? `len=${tok.length} ${tok.slice(0, 4)}...${tok.slice(-4)}` : "(empty)";
     try {
       const info = await lineClient().getBotInfo();
-      return NextResponse.json({ lineToken: "ok", basicId: info.basicId, displayName: info.displayName });
+      return NextResponse.json({ lineToken: "ok", fingerprint: fp, basicId: info.basicId });
     } catch (e) {
-      return NextResponse.json({ lineToken: "FAILED", error: (e as Error).message }, { status: 200 });
+      return NextResponse.json({ lineToken: "FAILED", fingerprint: fp, error: (e as Error).message });
     }
   }
 
