@@ -1,0 +1,84 @@
+/* Admin dashboard — matches the landing page (navy/gold, dark, modern). */
+.adm{
+  --navy:#0B1626; --navy2:#0A1320; --gold:#C9A227; --goldsoft:#E7C45A;
+  --ink:#EAEEF5; --muted:#93A0B4; --faint:#5E6B80; --line:rgba(255,255,255,.08);
+  min-height:100vh; margin:0; color:var(--ink);
+  font-family:system-ui,"Helvetica Neue",sans-serif; -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(900px 600px at 85% -5%, rgba(201,162,39,.10), transparent 55%),
+    radial-gradient(800px 600px at 0% 70%, rgba(35,60,100,.30), transparent 55%),
+    linear-gradient(180deg,#0B1626 0%, #0A1320 55%, #070D17 100%);
+  background-attachment:fixed;
+}
+.adm *{ box-sizing:border-box; }
+
+/* ---- login ---- */
+.adm-login{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.adm-login-card{ width:380px; max-width:100%; padding:44px 36px; border-radius:22px; text-align:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  border:1px solid var(--line); backdrop-filter:blur(10px); box-shadow:0 30px 70px rgba(0,0,0,.45); }
+.adm-eyebrow{ color:var(--gold); letter-spacing:.5em; font-size:11px; font-weight:700; }
+.adm-login-card h1{ font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600;
+  font-size:24px; letter-spacing:.08em; margin:14px 0 26px; }
+
+/* ---- shell ---- */
+.adm-bar{ display:flex; align-items:center; justify-content:space-between;
+  padding:20px clamp(20px,5vw,44px); border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:10; background:rgba(8,15,26,.7); backdrop-filter:blur(12px); }
+.adm-bar .b{ color:var(--gold); font-weight:700; letter-spacing:.28em; font-size:13px; }
+.adm-bar .s{ color:var(--faint); font-size:12px; letter-spacing:.1em; }
+.adm-main{ max-width:1140px; margin:0 auto; padding:clamp(24px,5vw,48px); }
+.adm-h2{ font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; letter-spacing:.06em;
+  font-size:18px; margin:0 0 18px; display:flex; align-items:center; gap:12px; }
+.adm-h2::before{ content:""; width:22px; height:2px; background:var(--gold); }
+
+/* ---- stat cards ---- */
+.adm-stats{ display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:16px; margin-bottom:40px; }
+.adm-stat{ position:relative; padding:22px 22px 20px; border-radius:18px; overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid var(--line); transition:transform .35s cubic-bezier(.16,.7,.2,1), border-color .35s, box-shadow .35s; }
+.adm-stat:hover{ transform:translateY(-5px); border-color:rgba(201,162,39,.4); box-shadow:0 18px 44px rgba(0,0,0,.4); }
+.adm-stat .l{ color:var(--muted); font-size:12px; letter-spacing:.05em; }
+.adm-stat .v{ font-family:"Hiragino Mincho ProN",serif; font-size:34px; font-weight:700; margin-top:8px; line-height:1; }
+.adm-stat.accent{ border-top:2px solid var(--gold); }
+.adm-stat.accent .v{ color:var(--goldsoft); }
+
+/* ---- panels ---- */
+.adm-panel{ padding:30px; border-radius:20px; margin-bottom:28px;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));
+  border:1px solid var(--line); }
+
+/* ---- inputs ---- */
+.adm-input,.adm-textarea{ display:block; width:100%; padding:14px 16px; margin-bottom:14px; border-radius:12px;
+  background:rgba(255,255,255,.04); border:1px solid var(--line); color:var(--ink); font-size:14px;
+  font-family:inherit; transition:border-color .3s, background .3s; }
+.adm-input::placeholder,.adm-textarea::placeholder{ color:var(--faint); }
+.adm-input:focus,.adm-textarea:focus{ outline:none; border-color:var(--gold); background:rgba(201,162,39,.06); }
+.adm-textarea{ min-height:110px; resize:vertical; line-height:1.7; }
+
+.adm-btn{ padding:13px 30px; border:none; border-radius:999px; cursor:pointer; font-weight:800; font-size:14px;
+  background:linear-gradient(135deg,var(--goldsoft),var(--gold)); color:#1a1407;
+  box-shadow:0 12px 30px rgba(201,162,39,.3); transition:transform .25s, box-shadow .25s; }
+.adm-btn:hover{ transform:translateY(-2px); box-shadow:0 16px 40px rgba(201,162,39,.5); }
+
+/* ---- table ---- */
+.adm-tablewrap{ overflow-x:auto; border-radius:14px; border:1px solid var(--line); }
+.adm-table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:640px; }
+.adm-table th{ text-align:left; padding:14px 16px; background:rgba(255,255,255,.04);
+  color:var(--gold); font-weight:700; letter-spacing:.08em; font-size:12px; white-space:nowrap; }
+.adm-table td{ padding:14px 16px; border-top:1px solid var(--line); color:#C2CBDA; }
+.adm-table tr:hover td{ background:rgba(255,255,255,.025); }
+
+/* status pill */
+.pill{ display:inline-block; padding:4px 12px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.05em; }
+.pill.active{ background:rgba(46,160,67,.16); color:#5fd07a; border:1px solid rgba(46,160,67,.4); }
+.pill.blocked{ background:rgba(220,80,80,.14); color:#f08a8a; border:1px solid rgba(220,80,80,.4); }
+.pill.route{ background:rgba(201,162,39,.14); color:var(--goldsoft); border:1px solid rgba(201,162,39,.35); }
+
+.tagcell{ display:flex; flex-wrap:wrap; gap:6px; }
+.tag{ font-size:11px; color:var(--muted); background:rgba(255,255,255,.05); border:1px solid var(--line);
+  padding:3px 9px; border-radius:6px; }
+
+.adm-msg-ok{ color:#5fd07a; margin-top:10px; font-size:13px; }
+.adm-msg-err{ color:#f08a8a; margin-top:10px; font-size:13px; }
+.adm-hint{ color:var(--faint); font-size:12px; margin:-4px 0 14px; }
