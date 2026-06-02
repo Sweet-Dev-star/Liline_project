@@ -81,8 +81,8 @@ export function buildBranchWelcome(branch: Branch): Message[] {
         body:
           "資産規模が一定を超えると、“自分で運用する”だけでは守り切れない局面が訪れます。" +
           "Wealth Partner社による全資産の最適化コンサルティングを、限られた方のみにご案内しています。",
-        ctaLabel: "特別なご案内を受け取る ▶",
-        ctaUrl: serverEnv.ifaBookingUrl || "https://example.com",
+        ctaLabel: "Wealth Partnerを見る ▶",
+        ctaUrl: serverEnv.ifaSiteUrl || "https://example.com",
       })
     );
     return msgs;
@@ -98,8 +98,8 @@ export function buildBranchWelcome(branch: Branch): Message[] {
         body:
           "一流のプライベートバンカーに資産を託せる“本物”になるための登竜門。" +
           "金融機関の『カモ』にならない本質的な教養を、マネトレ大学で体系的に学べます。",
-        ctaLabel: "登竜門の詳細を見る ▶",
-        ctaUrl: serverEnv.schoolLinkUrl || "https://example.com",
+        ctaLabel: "マネトレ大学を見る ▶",
+        ctaUrl: serverEnv.schoolSiteUrl || "https://example.com",
       })
     );
     return msgs;

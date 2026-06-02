@@ -35,11 +35,19 @@ export const serverEnv = {
   get cronSecret() {
     return optional("CRON_SECRET");
   },
+  /** conversion endpoints (day-3 drip CTA) */
   get ifaBookingUrl() {
     return optional("IFA_BOOKING_URL");
   },
   get schoolLinkUrl() {
     return optional("SCHOOL_LINK_URL");
+  },
+  /** primary websites (immediate welcome-card CTA) */
+  get ifaSiteUrl() {
+    return optional("IFA_SITE_URL");
+  },
+  get schoolSiteUrl() {
+    return optional("SCHOOL_SITE_URL");
   },
   /** when "1", drip steps are scheduled seconds apart (fast local testing). */
   get dripTestMode() {

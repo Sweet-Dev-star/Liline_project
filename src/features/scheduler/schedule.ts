@@ -8,12 +8,12 @@ const SEND_HOUR_JST = 20;
 
 /**
  * Compute the absolute send time for a step.
- * - test mode: `index*20s + 15s` from now (watch the whole drip in ~1 min)
+ * - test mode: delayDays * 10s from now -> day1=10s, day2=20s, day3=30s
  * - normal: `delayDays` later, snapped to 20:00 JST
  */
 function computeSendAt(delayDays: number, index: number): Date {
   if (serverEnv.dripTestMode) {
-    return new Date(Date.now() + (index + 1) * 20_000);
+    return new Date(Date.now() + delayDays * 10_000);
   }
   // "now" in JST
   const nowJst = new Date(Date.now() + TZ_OFFSET_MS);
