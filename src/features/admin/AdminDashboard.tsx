@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import "./admin.css";
+
+const TOKEN_KEY = "tsl_admin_token";
 
 interface Stats {
   total: number; active: number; blocked: number;
@@ -23,18 +25,45 @@ export function AdminDashboard() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
-  async function login() {
-    setErr("");
+  // load stats with a given token; persist it on success so reload stays logged in
+  const loadWith = useCallback(async (t: string, persist: boolean): Promise<boolean> => {
     try {
-      const res = await fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${t}` } });
       if (!res.ok) throw new Error("unauthorized");
       const data = await res.json();
       setStats(data.stats);
       setUsers(data.users);
       setAuthed(true);
+      if (persist) localStorage.setItem(TOKEN_KEY, t);
+      return true;
     } catch {
-      setErr("認証に失敗しました。トークンをご確認ください。");
+      return false;
     }
+  }, []);
+
+  // on mount: if a saved token exists, auto-login (survives reload)
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+    if (saved) {
+      setToken(saved);
+      loadWith(saved, false).then((ok) => {
+        if (!ok) localStorage.removeItem(TOKEN_KEY);
+      });
+    }
+  }, [loadWith]);
+
+  async function login() {
+    setErr("");
+    const ok = await loadWith(token, true);
+    if (!ok) setErr("認証に失敗しました。トークンをご確認ください。");
+  }
+
+  function logout() {
+    localStorage.removeItem(TOKEN_KEY);
+    setAuthed(false);
+    setToken("");
+    setStats(undefined);
+    setUsers([]);
   }
 
   async function sendBroadcast() {
@@ -77,7 +106,7 @@ export function AdminDashboard() {
     <div className="adm">
       <div className="adm-bar">
         <span className="b">TAX STRATEGY LAB</span>
-        <span className="s">管理ダッシュボード</span>
+        <button className="adm-logout" onClick={logout}>ログアウト</button>
       </div>
 
       <div className="adm-main">
