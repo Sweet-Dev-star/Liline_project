@@ -36,5 +36,10 @@ export async function handleMessage(event: MessageEvent): Promise<void> {
       ? buildGreeting(null)
       : buildEcho(text);
 
-  await lineClient().replyMessage({ replyToken: event.replyToken, messages });
+  try {
+    await lineClient().replyMessage({ replyToken: event.replyToken, messages });
+    console.log(`[message] replied (${keyword === "menu" || keyword === "greeting" ? "greeting" : "echo"})`);
+  } catch (e) {
+    console.error("[message] reply FAILED:", JSON.stringify((e as { originalError?: { response?: { data?: unknown } } })?.originalError?.response?.data ?? (e as Error).message));
+  }
 }

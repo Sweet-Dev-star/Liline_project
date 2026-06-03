@@ -21,10 +21,14 @@ export async function handleFollow(event: FollowEvent): Promise<void> {
   }
 
   if (event.replyToken) {
-    await lineClient().replyMessage({
-      replyToken: event.replyToken,
-      messages: buildGreeting(displayName),
-    });
+    try {
+      await lineClient().replyMessage({
+        replyToken: event.replyToken,
+        messages: buildGreeting(displayName),
+      });
+      console.log(`[webhook] follow saved + greeted (${displayName ?? "unknown"})`);
+    } catch (e) {
+      console.error("[follow] greeting FAILED:", JSON.stringify((e as { originalError?: { response?: { data?: unknown } } })?.originalError?.response?.data ?? (e as Error).message));
+    }
   }
-  console.log(`[webhook] follow saved + greeted (${displayName ?? "unknown"})`);
 }
