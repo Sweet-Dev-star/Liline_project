@@ -22,10 +22,34 @@ export async function GET(req: Request) {
     const fp = tok ? `len=${tok.length} ${tok.slice(0, 4)}...${tok.slice(-4)}` : "(empty)";
     try {
       const info = await lineClient().getBotInfo();
-      return NextResponse.json({ lineToken: "ok", fingerprint: fp, basicId: info.basicId });
+      return NextResponse.json({
+        lineToken: "ok",
+        fingerprint: fp,
+        basicId: info.basicId, // the @xxxx ID — MUST match the OA you added as a friend
+        displayName: info.displayName,
+        chatMode: info.chatMode, // "chat" = Chat mode ON (intercepts replies!) | "bot" = OK
+        markAsReadMode: info.markAsReadMode,
+      });
     } catch (e) {
       return NextResponse.json({ lineToken: "FAILED", fingerprint: fp, error: (e as Error).message });
     }
+  }
+
+  // Show the most recent inbound webhook events (durably logged). Send "menu"
+  // from the phone, then open this: if a fresh "message" event appears, real
+  // messages ARE reaching the handler -> the reply side is the problem.
+  if (url.searchParams.get("check") === "events") {
+    const rows = await prisma.eventLog.findMany({ orderBy: { createdAt: "desc" }, take: 15 });
+    const now = Date.now();
+    return NextResponse.json({
+      count: rows.length,
+      events: rows.map((r) => ({
+        type: r.type,
+        userId: r.userId,
+        at: r.createdAt,
+        secondsAgo: Math.round((now - r.createdAt.getTime()) / 1000),
+      })),
+    });
   }
 
   // Ask LINE directly: what is the webhook URL set to, is it active, and can
