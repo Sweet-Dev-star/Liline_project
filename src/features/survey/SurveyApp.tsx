@@ -141,6 +141,10 @@ const styles: Record<string, React.CSSProperties> = {
     position: "fixed",
     inset: 0,
     overflow: "hidden",
+    // permanent navy backdrop: the video layers (intro / background) are now
+    // conditional, so loading / submitting / done / error screens need their
+    // own dark backdrop or their light text would be invisible.
+    background: ui.navyDeep,
     fontFamily: "system-ui, sans-serif",
   },
 };
