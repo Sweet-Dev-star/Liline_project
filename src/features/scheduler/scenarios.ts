@@ -81,9 +81,10 @@ export const SCENARIOS: Record<Branch, StepDef[]> = {
         ctaCard(
           "EXCLUSIVE",
           "基準をクリアされたあなたへ",
-          "代表との個別セッションでは、あなたの全資産を前提とした具体的な最適化方針をご提示します。",
-          "個別セッションを確認する ▶",
-          serverEnv.ifaBookingUrl || "https://example.com"
+          "税務・不動産・金融を横断し、あなたの全資産を最適化するWealth Partner社。" +
+            "その理念と実績を、まずは公式サイトでご確認ください。",
+          "ウェルスパートナーの詳細を見る ▶",
+          serverEnv.ifaSiteUrl || "https://example.com"
         ),
       ],
     },
