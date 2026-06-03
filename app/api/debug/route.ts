@@ -28,6 +28,32 @@ export async function GET(req: Request) {
     }
   }
 
+  // Ask LINE directly: what is the webhook URL set to, is it active, and can
+  // LINE reach it right now? This is the truth source for "menu got no reply".
+  if (url.searchParams.get("check") === "webhook") {
+    const tok = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "";
+    const headers = { Authorization: `Bearer ${tok}` };
+    try {
+      const epRes = await fetch("https://api.line.me/v2/bot/channel/webhook/endpoint", { headers });
+      const endpoint = await epRes.json(); // { endpoint, active }
+      const testRes = await fetch("https://api.line.me/v2/bot/channel/webhook/test", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+      });
+      const test = await testRes.json(); // { success, statusCode, reason, detail, timestamp }
+      const expected = (process.env.PUBLIC_BASE_URL ?? "https://yukatax.netlify.app") + "/api/webhook";
+      return NextResponse.json({
+        configuredEndpoint: endpoint?.endpoint ?? "(none)",
+        active: endpoint?.active ?? null,
+        expectedEndpoint: expected,
+        urlMatches: endpoint?.endpoint === expected,
+        reachTest: test,
+      });
+    } catch (e) {
+      return NextResponse.json({ webhook: "FAILED", error: (e as Error).message });
+    }
+  }
+
   // Check the LINE monthly message quota. Free plan = 200 PUSH msgs/month.
   // If consumption >= quota, all push/multicast (drips, branch cards) silently drop.
   if (url.searchParams.get("check") === "quota") {
