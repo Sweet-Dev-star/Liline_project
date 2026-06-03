@@ -118,7 +118,7 @@ export const SCENARIOS: Record<Branch, StepDef[]> = {
           "GATEWAY",
           "本物の富裕層を目指すあなたへ",
           "資産が1億を超えてから学ぶのでは遅い。今このステージだからこそ、登竜門で基礎を固める価値があります。",
-          "登竜門の詳細を見る ▶",
+          "個別で相談したい方はこちら ▶",
           serverEnv.schoolLinkUrl || "https://example.com"
         ),
       ],
