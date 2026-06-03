@@ -6,7 +6,7 @@ import type { AssetBand, IncomeBand, Stance } from "@/src/shared/branch";
 import { ui } from "./theme";
 import { Q1_ASSETS, Q2_INCOME, Q3_STANCE } from "./questions";
 import { VideoBackground } from "./components/VideoBackground";
-import { IntroOverlay } from "./components/IntroOverlay";
+import { IntroVideo } from "./components/IntroVideo";
 import { QuestionStep } from "./components/QuestionStep";
 import { ResultScreen } from "./components/ResultScreen";
 
@@ -50,15 +50,24 @@ export function SurveyApp({ liffId, videoUrl }: { liffId: string; videoUrl: stri
     }
   }
 
+  // poster image lives next to the video (same path, .jpg) — see public/*-audio.jpg
+  const poster = videoUrl ? videoUrl.replace(/\.mp4$/i, ".jpg") : undefined;
+
+  // muted ambient background is shown only during the questions; the intro uses
+  // the tap-to-play IntroVideo (with sound) instead.
+  const showBackground = phase === "q1" || phase === "q2" || phase === "q3" || phase === "submitting";
+
   return (
     <main style={styles.root}>
-      <VideoBackground src={videoUrl} />
+      {showBackground && <VideoBackground src={videoUrl} />}
 
       {phase === "loading" && <Centered>読み込み中…</Centered>}
       {phase === "submitting" && <Centered>送信中…</Centered>}
       {phase === "error" && <Centered>エラーが発生しました。LINEから再度お試しください。</Centered>}
 
-      {phase === "intro" && <IntroOverlay onStart={() => setPhase("q1")} />}
+      {phase === "intro" && (
+        <IntroVideo src={videoUrl} poster={poster} onProceed={() => setPhase("q1")} />
+      )}
 
       {phase === "q1" && (
         <QuestionStep
