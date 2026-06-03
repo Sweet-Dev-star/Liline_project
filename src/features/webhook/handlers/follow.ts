@@ -1,5 +1,5 @@
 import type { FollowEvent } from "@line/bot-sdk";
-import { lineClient } from "@/src/lib/line/client";
+import { replyOrPush } from "@/src/lib/line/send";
 import { getProfileSafe } from "@/src/lib/line/profile";
 import { buildGreeting } from "@/src/features/messaging/greeting";
 import { prisma } from "@/src/lib/db";
@@ -20,15 +20,6 @@ export async function handleFollow(event: FollowEvent): Promise<void> {
     });
   }
 
-  if (event.replyToken) {
-    try {
-      await lineClient().replyMessage({
-        replyToken: event.replyToken,
-        messages: buildGreeting(displayName),
-      });
-      console.log(`[webhook] follow saved + greeted (${displayName ?? "unknown"})`);
-    } catch (e) {
-      console.error("[follow] greeting FAILED:", JSON.stringify((e as { originalError?: { response?: { data?: unknown } } })?.originalError?.response?.data ?? (e as Error).message));
-    }
-  }
+  const via = await replyOrPush(userId, event.replyToken, buildGreeting(displayName));
+  console.log(`[webhook] follow saved + greeted via ${via} (${displayName ?? "unknown"})`);
 }

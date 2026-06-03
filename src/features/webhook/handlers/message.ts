@@ -1,5 +1,5 @@
 import type { MessageEvent } from "@line/bot-sdk";
-import { lineClient } from "@/src/lib/line/client";
+import { replyOrPush } from "@/src/lib/line/send";
 import { getProfileSafe } from "@/src/lib/line/profile";
 import { buildGreeting } from "@/src/features/messaging/greeting";
 import { buildEcho } from "@/src/features/messaging/echo";
@@ -36,10 +36,7 @@ export async function handleMessage(event: MessageEvent): Promise<void> {
       ? buildGreeting(null)
       : buildEcho(text);
 
-  try {
-    await lineClient().replyMessage({ replyToken: event.replyToken, messages });
-    console.log(`[message] replied (${keyword === "menu" || keyword === "greeting" ? "greeting" : "echo"})`);
-  } catch (e) {
-    console.error("[message] reply FAILED:", JSON.stringify((e as { originalError?: { response?: { data?: unknown } } })?.originalError?.response?.data ?? (e as Error).message));
-  }
+  const kind = keyword === "menu" || keyword === "greeting" ? "greeting" : "echo";
+  const via = await replyOrPush(userId, event.replyToken, messages);
+  console.log(`[message] ${kind} delivered via ${via}`);
 }
