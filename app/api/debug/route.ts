@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/db";
 import { lineClient } from "@/src/lib/line/client";
 import { serverEnv } from "@/src/config/env";
+import { buildGreeting } from "@/src/features/messaging/greeting";
 
 // Diagnostic endpoint — guarded by CRON_SECRET so it isn't public.
 export const runtime = "nodejs";
@@ -35,7 +36,36 @@ export async function GET(req: Request) {
       publicBaseUrl: process.env.PUBLIC_BASE_URL ?? "(unset)",
       ifaBooking: process.env.IFA_BOOKING_URL ?? "(unset)",
       schoolLink: process.env.SCHOOL_LINK_URL ?? "(unset)",
+      ifaSite: process.env.IFA_SITE_URL ?? "(unset)",
+      schoolSite: process.env.SCHOOL_SITE_URL ?? "(unset)",
+      liffId: process.env.NEXT_PUBLIC_LIFF_ID ?? "(unset)",
     });
+  }
+
+  // Push the greeting card to the most recent user (or ?to=<userId>) and
+  // surface the EXACT LINE API error in the HTTP response — no log digging.
+  if (url.searchParams.get("check") === "greeting") {
+    const to =
+      url.searchParams.get("to") ??
+      (await prisma.user.findFirst({ orderBy: { registeredAt: "desc" } }))?.id;
+    if (!to) return NextResponse.json({ error: "no user to send to" }, { status: 404 });
+
+    const messages = buildGreeting(null);
+    try {
+      await lineClient().pushMessage({ to, messages });
+      return NextResponse.json({ greeting: "SENT", to, liffUri: (messages[0] as { contents?: { footer?: { contents?: Array<{ action?: { uri?: string } }> } } }).contents?.footer?.contents?.[0]?.action?.uri });
+    } catch (e) {
+      const err = e as { originalError?: { response?: { data?: unknown } }; statusCode?: number };
+      return NextResponse.json(
+        {
+          greeting: "FAILED",
+          to,
+          statusCode: err.statusCode,
+          lineError: err.originalError?.response?.data ?? (e as Error).message,
+        },
+        { status: 200 }
+      );
+    }
   }
 
   const users = await prisma.user.findMany({
