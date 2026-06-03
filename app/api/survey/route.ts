@@ -6,6 +6,7 @@ import { saveSurvey } from "@/src/features/survey/saveSurvey";
 import { buildBranchWelcome } from "@/src/features/messaging/branchWelcome";
 import { lineClient } from "@/src/lib/line/client";
 import { scheduleDrip, cancelPendingDrip } from "@/src/features/scheduler/schedule";
+import { prisma } from "@/src/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,11 +38,30 @@ export async function POST(req: Request) {
 
   const input = { assets, income, stance } as SurveyInput;
   const branch = decideBranch(input);
-  console.log(`[survey] ${userId} -> ${branch} (${assets}/${income}/${stance})`);
+
+  // Was this user already routed? If they re-submit the SAME branch we must NOT
+  // push another welcome card or re-fire the drip — that's what produced the
+  // "wrong-branch card mixed in" reports (old branch's card lingers in chat).
+  const existing = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { branch: true },
+  });
+  const branchChanged = existing?.branch !== branch;
+  console.log(
+    `[survey] ${userId} -> ${branch} (${assets}/${income}/${stance}) ` +
+      `[was: ${existing?.branch ?? "none"}, changed: ${branchChanged}]`
+  );
 
   await saveSurvey(userId, input, branch);
 
-  // resubmit safety: cancel any prior pending drip before (re)scheduling
+  if (!branchChanged) {
+    // identical re-submission: response is recorded, but no new card / drip
+    console.log(`[survey] branch unchanged for ${userId}; skipping welcome + drip`);
+    return NextResponse.json({ ok: true, branch, scheduled: 0, skipped: "branch_unchanged" });
+  }
+
+  // branch is new or changed: clear any prior pending drip (incl. other branches)
+  // before sending the new welcome + scheduling the new drip.
   await cancelPendingDrip(userId);
 
   try {
