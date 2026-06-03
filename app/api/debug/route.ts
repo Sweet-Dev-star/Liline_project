@@ -28,6 +28,34 @@ export async function GET(req: Request) {
     }
   }
 
+  // Check the LINE monthly message quota. Free plan = 200 PUSH msgs/month.
+  // If consumption >= quota, all push/multicast (drips, branch cards) silently drop.
+  if (url.searchParams.get("check") === "quota") {
+    const tok = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "";
+    const headers = { Authorization: `Bearer ${tok}` };
+    try {
+      const [qRes, cRes] = await Promise.all([
+        fetch("https://api.line.me/v2/bot/message/quota", { headers }),
+        fetch("https://api.line.me/v2/bot/message/quota/consumption", { headers }),
+      ]);
+      const quota = await qRes.json();
+      const consumption = await cRes.json();
+      const limit = quota?.value ?? null;
+      const used = consumption?.totalUsage ?? null;
+      const exhausted =
+        quota?.type === "limited" && limit != null && used != null && used >= limit;
+      return NextResponse.json({
+        plan: quota?.type, // "none" = unlimited (paid), "limited" = capped (free)
+        limit,
+        used,
+        remaining: limit != null && used != null ? limit - used : null,
+        exhausted,
+      });
+    } catch (e) {
+      return NextResponse.json({ quota: "FAILED", error: (e as Error).message });
+    }
+  }
+
   if (url.searchParams.get("check") === "env") {
     return NextResponse.json({
       mainVideo: process.env.NEXT_PUBLIC_MAIN_VIDEO_URL ?? "(unset)",
