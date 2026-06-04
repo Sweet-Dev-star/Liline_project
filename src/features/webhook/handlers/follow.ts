@@ -2,14 +2,26 @@ import type { FollowEvent } from "@line/bot-sdk";
 import { replyOrPush } from "@/src/lib/line/send";
 import { getProfileSafe } from "@/src/lib/line/profile";
 import { buildGreeting } from "@/src/features/messaging/greeting";
+import { buildReregisterPrompt } from "@/src/features/messaging/reregister";
 import { prisma } from "@/src/lib/db";
 
-/** Handle a friend-add: persist the user, then greet with the click-to-LIFF button. */
+/**
+ * Handle a friend-add.
+ * - Brand-new user: greet with the click-to-LIFF button.
+ * - Existing MEMBER (already routed to IFA / School) re-adding: ask whether to
+ *   re-register (Yes/No card) instead of greeting again.
+ */
 export async function handleFollow(event: FollowEvent): Promise<void> {
   const userId = event.source.userId;
   const { displayName, pictureUrl } = userId
     ? await getProfileSafe(userId)
     : { displayName: null, pictureUrl: null };
+
+  // is this an existing member? read BEFORE the upsert (upsert keeps branch)
+  const existing = userId
+    ? await prisma.user.findUnique({ where: { id: userId }, select: { branch: true } })
+    : null;
+  const isMember = existing?.branch === "ifa" || existing?.branch === "school";
 
   // persist the friend (re-activates if they had blocked before)
   if (userId) {
@@ -20,6 +32,10 @@ export async function handleFollow(event: FollowEvent): Promise<void> {
     });
   }
 
-  const via = await replyOrPush(userId, event.replyToken, buildGreeting(displayName));
-  console.log(`[webhook] follow saved + greeted via ${via} (${displayName ?? "unknown"})`);
+  // existing member -> confirm re-registration; otherwise greet as a new friend
+  const messages = isMember ? buildReregisterPrompt(displayName) : buildGreeting(displayName);
+  const via = await replyOrPush(userId, event.replyToken, messages);
+  console.log(
+    `[webhook] follow: ${isMember ? "reregister-prompt" : "greeted"} via ${via} (${displayName ?? "unknown"})`
+  );
 }
