@@ -22,6 +22,7 @@ export function AdminDashboard() {
   const [users, setUsers] = useState<Row[]>([]);
   const [broadcastTag, setBroadcastTag] = useState("");
   const [broadcastText, setBroadcastText] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
@@ -64,6 +65,40 @@ export function AdminDashboard() {
     setToken("");
     setStats(undefined);
     setUsers([]);
+    setSelected(new Set());
+  }
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((prev) => (prev.size === users.length ? new Set() : new Set(users.map((u) => u.id))));
+  }
+
+  async function deleteSelected() {
+    setMsg(""); setErr("");
+    if (!selected.size) return;
+    if (!confirm(`選択した${selected.size}名のユーザーを削除しますか？\nこの操作は取り消せません。`)) return;
+    try {
+      const res = await fetch("/api/admin/users/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "failed");
+      setMsg(`${data.deleted}名のユーザーを削除しました。`);
+      setSelected(new Set());
+      await loadWith(token, false); // refresh stats + list
+    } catch (e) {
+      setErr("削除に失敗しました：" + (e as Error).message);
+    }
   }
 
   async function sendBroadcast() {
@@ -137,17 +172,42 @@ export function AdminDashboard() {
         </div>
 
         <div className="adm-panel">
-          <h2 className="adm-h2">登録ユーザー（最新100件）</h2>
+          <div className="adm-panel-head">
+            <h2 className="adm-h2">登録ユーザー（最新100件）</h2>
+            <button
+              className="adm-btn danger"
+              onClick={deleteSelected}
+              disabled={selected.size === 0}
+            >
+              選択したユーザーを削除{selected.size > 0 ? `（${selected.size}）` : ""}
+            </button>
+          </div>
           <div className="adm-tablewrap">
             <table className="adm-table">
               <thead>
                 <tr>
+                  <th className="adm-check">
+                    <input
+                      type="checkbox"
+                      aria-label="すべて選択"
+                      checked={users.length > 0 && selected.size === users.length}
+                      onChange={toggleAll}
+                    />
+                  </th>
                   <th>表示名</th><th>ルート</th><th>状態</th><th>タグ</th><th>登録日</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id}>
+                  <tr key={u.id} className={selected.has(u.id) ? "is-selected" : undefined}>
+                    <td className="adm-check">
+                      <input
+                        type="checkbox"
+                        aria-label={`${u.displayName ?? u.id} を選択`}
+                        checked={selected.has(u.id)}
+                        onChange={() => toggleOne(u.id)}
+                      />
+                    </td>
                     <td>{u.displayName ?? "—"}</td>
                     <td>{u.branch ? <span className="pill route">{u.branch}</span> : "—"}</td>
                     <td><span className={"pill " + (u.status === "active" ? "active" : "blocked")}>{u.status}</span></td>

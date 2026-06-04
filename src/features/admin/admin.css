@@ -65,6 +65,19 @@
   box-shadow:0 12px 30px rgba(201,162,39,.3); transition:transform .25s, box-shadow .25s; }
 .adm-btn:hover{ transform:translateY(-2px); box-shadow:0 16px 40px rgba(201,162,39,.5); }
 
+/* danger variant (delete selected) */
+.adm-btn.danger{ padding:10px 22px; font-size:13px;
+  background:linear-gradient(135deg,#e06a6a,#c64545); color:#fff;
+  box-shadow:0 10px 26px rgba(198,69,69,.30); }
+.adm-btn.danger:hover{ box-shadow:0 14px 34px rgba(198,69,69,.5); }
+.adm-btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; box-shadow:none;
+  background:rgba(255,255,255,.08); color:var(--muted); }
+.adm-btn:disabled:hover{ transform:none; box-shadow:none; }
+
+/* panel header row (title + action button) */
+.adm-panel-head{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
+.adm-panel-head .adm-h2{ margin:0; }
+
 /* ---- table ---- */
 .adm-tablewrap{ overflow-x:auto; border-radius:14px; border:1px solid var(--line); }
 .adm-table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:640px; }
@@ -72,6 +85,11 @@
   color:var(--gold); font-weight:700; letter-spacing:.08em; font-size:12px; white-space:nowrap; }
 .adm-table td{ padding:14px 16px; border-top:1px solid var(--line); color:#C2CBDA; }
 .adm-table tr:hover td{ background:rgba(255,255,255,.025); }
+.adm-table tr.is-selected td{ background:rgba(201,162,39,.10); }
+
+/* checkbox column */
+.adm-check{ width:44px; text-align:center; }
+.adm-check input{ width:16px; height:16px; cursor:pointer; accent-color:var(--gold); }
 
 /* status pill */
 .pill{ display:inline-block; padding:4px 12px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.05em; }
