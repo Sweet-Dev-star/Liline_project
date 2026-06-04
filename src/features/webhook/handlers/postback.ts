@@ -1,5 +1,6 @@
-import type { PostbackEvent } from "@line/bot-sdk";
+import type { PostbackEvent, messagingApi } from "@line/bot-sdk";
 import { lineClient } from "@/src/lib/line/client";
+import { replyOrPush } from "@/src/lib/line/send";
 import { faqMessages, aboutMessages, contactMessages } from "@/src/features/messaging/menuResponses";
 import { handleReregisterYes } from "./reregister";
 
@@ -11,7 +12,19 @@ export async function handlePostback(event: PostbackEvent): Promise<void> {
   if (data === "action=reregister_yes") {
     return handleReregisterYes(event.source.userId, event.replyToken);
   }
-  // "action=reregister_no" is intentionally NOT handled yet (per spec).
+
+  // existing member kept their registration -> gentle, reassuring reply
+  if (data === "action=reregister_no") {
+    const msg: messagingApi.Message = {
+      type: "text",
+      text:
+        "かしこまりました。\n" +
+        "引き続き、どうぞよろしくお願いいたします。\n" +
+        "ご不明な点やご相談がございましたら、いつでもお気軽にメッセージくださいね。",
+    };
+    await replyOrPush(event.source.userId, event.replyToken, [msg]);
+    return;
+  }
 
   if (!event.replyToken) return;
   let messages;
