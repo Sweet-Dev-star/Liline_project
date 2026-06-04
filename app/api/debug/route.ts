@@ -117,6 +117,11 @@ export async function GET(req: Request) {
       ifaSite: process.env.IFA_SITE_URL ?? "(unset)",
       schoolSite: process.env.SCHOOL_SITE_URL ?? "(unset)",
       liffId: process.env.NEXT_PUBLIC_LIFF_ID ?? "(unset)",
+      dripTestMode: process.env.DRIP_TEST_MODE === "1",
+      dripSchedule:
+        process.env.DRIP_TEST_MODE === "1"
+          ? "TEST: +10/20/30 sec"
+          : "PRODUCTION: day 1/2/3 @ 20:00 JST",
     });
   }
 
