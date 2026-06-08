@@ -35,16 +35,20 @@ export const serverEnv = {
   get cronSecret() {
     return optional("CRON_SECRET");
   },
-  /** conversion endpoints (day-3 drip CTA) */
-  get ifaBookingUrl() {
-    return optional("IFA_BOOKING_URL");
+  /** ゆか姉's scheduling tool (Spir) link, sent to qualified consultation leads */
+  get consultBookingUrl() {
+    return optional("CONSULT_BOOKING_URL");
   },
+  /**
+   * Minimum asset tier for the consultation. "500m" = 5億円以上 (default),
+   * "300m" = 3億円以上. Lowering the bar later is just this env change.
+   */
+  get consultAssetThreshold() {
+    return optional("CONSULT_ASSET_THRESHOLD", "500m");
+  },
+  /** School (マネトレ大学) conversion endpoints — unchanged */
   get schoolLinkUrl() {
     return optional("SCHOOL_LINK_URL");
-  },
-  /** primary websites (immediate welcome-card CTA) */
-  get ifaSiteUrl() {
-    return optional("IFA_SITE_URL");
   },
   get schoolSiteUrl() {
     return optional("SCHOOL_SITE_URL");
@@ -58,10 +62,9 @@ export const serverEnv = {
 /** Public config (safe to expose to the browser; NEXT_PUBLIC_*). */
 export const publicEnv = {
   liffId: optional("NEXT_PUBLIC_LIFF_ID"),
-  /** main education video shown in the LIFF background */
+  /** main education video shown/played in the LIFF intro */
   mainVideoUrl: optional("NEXT_PUBLIC_MAIN_VIDEO_URL"),
-  /** per-route 補足動画 (supplementary videos) sent at the branch divergence */
-  ifaVideoUrl: optional("NEXT_PUBLIC_IFA_VIDEO_URL"),
+  /** School 補足動画 (supplementary video) sent at the School branch */
   schoolVideoUrl: optional("NEXT_PUBLIC_SCHOOL_VIDEO_URL"),
 };
 

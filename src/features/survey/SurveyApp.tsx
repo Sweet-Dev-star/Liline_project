@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import liff from "@line/liff";
-import type { AssetBand, IncomeBand, Stance } from "@/src/shared/branch";
+import type { AssetBand, IncomeBand, ConsultWish } from "@/src/shared/branch";
 import { ui } from "./theme";
-import { Q1_ASSETS, Q2_INCOME, Q3_STANCE } from "./questions";
+import { Q1_ASSETS, Q2_INCOME, Q3_CONSULT } from "./questions";
 import { VideoBackground } from "./components/VideoBackground";
 import { IntroVideo } from "./components/IntroVideo";
 import { QuestionStep } from "./components/QuestionStep";
@@ -16,7 +16,7 @@ export function SurveyApp({ liffId, videoUrl }: { liffId: string; videoUrl: stri
   const [phase, setPhase] = useState<Phase>("loading");
   const [assets, setAssets] = useState<AssetBand>();
   const [income, setIncome] = useState<IncomeBand>();
-  const [stance, setStance] = useState<Stance>();
+  const [consult, setConsult] = useState<ConsultWish>();
 
   useEffect(() => {
     (async () => {
@@ -33,7 +33,7 @@ export function SurveyApp({ liffId, videoUrl }: { liffId: string; videoUrl: stri
     })();
   }, [liffId]);
 
-  async function submit(finalStance: Stance) {
+  async function submit(finalConsult: ConsultWish) {
     if (!assets || !income) return;
     setPhase("submitting");
     try {
@@ -41,7 +41,7 @@ export function SurveyApp({ liffId, videoUrl }: { liffId: string; videoUrl: stri
       const res = await fetch("/api/survey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken, assets, income, stance: finalStance }),
+        body: JSON.stringify({ idToken, assets, income, consult: finalConsult }),
       });
       if (!res.ok) throw new Error(String(res.status));
       setPhase("done");
@@ -99,11 +99,11 @@ export function SurveyApp({ liffId, videoUrl }: { liffId: string; videoUrl: stri
         <QuestionStep
           index={3}
           total={3}
-          title={Q3_STANCE.title}
-          options={Q3_STANCE.options}
-          selected={stance}
+          title={Q3_CONSULT.title}
+          options={Q3_CONSULT.options}
+          selected={consult}
           onSelect={(v) => {
-            setStance(v);
+            setConsult(v);
             submit(v);
           }}
         />

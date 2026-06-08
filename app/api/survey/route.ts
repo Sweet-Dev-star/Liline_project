@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { decideBranch, ASSET_VALUES, INCOME_VALUES, STANCE_VALUES } from "@/src/shared/branch";
+import { decideBranch, ASSET_VALUES, INCOME_VALUES, CONSULT_VALUES } from "@/src/shared/branch";
 import type { SurveyInput } from "@/src/shared/branch";
+import { serverEnv } from "@/src/config/env";
 import { verifyLiffIdToken } from "@/src/features/survey/verifyToken";
 import { saveSurvey } from "@/src/features/survey/saveSurvey";
 import { buildBranchWelcome } from "@/src/features/messaging/branchWelcome";
@@ -19,12 +20,12 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "bad_json" }, { status: 400 });
 
-  const { idToken, assets, income, stance } = body as Record<string, string>;
+  const { idToken, assets, income, consult } = body as Record<string, string>;
   if (
     typeof idToken !== "string" ||
     !ASSET_VALUES.includes(assets as never) ||
     !INCOME_VALUES.includes(income as never) ||
-    !STANCE_VALUES.includes(stance as never)
+    !CONSULT_VALUES.includes(consult as never)
   ) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
@@ -36,8 +37,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_id_token" }, { status: 401 });
   }
 
-  const input = { assets, income, stance } as SurveyInput;
-  const branch = decideBranch(input);
+  const input = { assets, income, consult } as SurveyInput;
+  const branch = decideBranch(input, serverEnv.consultAssetThreshold);
 
   // Was this user already routed? If they re-submit the SAME branch we must NOT
   // push another welcome card or re-fire the drip — that's what produced the
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
   });
   const branchChanged = existing?.branch !== branch;
   console.log(
-    `[survey] ${userId} -> ${branch} (${assets}/${income}/${stance}) ` +
+    `[survey] ${userId} -> ${branch} (${assets}/${income}/consult:${consult}) ` +
       `[was: ${existing?.branch ?? "none"}, changed: ${branchChanged}]`
   );
 

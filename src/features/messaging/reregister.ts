@@ -5,7 +5,7 @@ type Message = messagingApi.Message;
 type FlexBubble = messagingApi.FlexBubble;
 
 /**
- * Shown when an EXISTING member (already routed to IFA / School) re-adds the
+ * Shown when an EXISTING member (already routed to 個別相談 / School) re-adds the
  * account. Asks whether to re-register, with Yes / No postback buttons.
  * - はい  -> data "action=reregister_yes" (wipes data + restarts the funnel)
  * - いいえ -> data "action=reregister_no" (NOT handled yet, by design)
@@ -28,7 +28,7 @@ export function buildReregisterPrompt(displayName: string | null): Message[] {
         { type: "text", text: `${name}さま`, color: theme.textMutedOnDark, size: "sm", margin: "lg" },
         {
           type: "text",
-          text: "すでにスクール／IFAにご登録済みです。",
+          text: "すでにご登録済みです。",
           color: theme.textOnDark,
           size: "md",
           weight: "bold",

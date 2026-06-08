@@ -7,7 +7,7 @@ const TOKEN_KEY = "tsl_admin_token";
 
 interface Stats {
   total: number; active: number; blocked: number;
-  ifa: number; school: number; nurture: number;
+  consultation: number; school: number; nurture: number;
   pending: number; sent: number; surveys: number;
 }
 interface Row {
@@ -150,7 +150,7 @@ export function AdminDashboard() {
             <Stat label="友だち総数" value={stats.total} />
             <Stat label="アクティブ" value={stats.active} />
             <Stat label="ブロック" value={stats.blocked} />
-            <Stat label="IFA" value={stats.ifa} accent />
+            <Stat label="個別相談" value={stats.consultation} accent />
             <Stat label="スクール" value={stats.school} accent />
             <Stat label="非該当" value={stats.nurture} accent />
             <Stat label="回答数" value={stats.surveys} />

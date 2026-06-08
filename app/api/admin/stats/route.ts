@@ -13,11 +13,11 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const [total, active, blocked, ifa, school, nurture, pending, sent, surveys] = await Promise.all([
+  const [total, active, blocked, consultation, school, nurture, pending, sent, surveys] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { status: "active" } }),
     prisma.user.count({ where: { status: "blocked" } }),
-    prisma.user.count({ where: { branch: "ifa" } }),
+    prisma.user.count({ where: { branch: "consultation" } }),
     prisma.user.count({ where: { branch: "school" } }),
     prisma.user.count({ where: { branch: "nurture" } }),
     prisma.scheduledMessage.count({ where: { status: "pending" } }),
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({
-    stats: { total, active, blocked, ifa, school, nurture, pending, sent, surveys },
+    stats: { total, active, blocked, consultation, school, nurture, pending, sent, surveys },
     users: users.map((u) => ({
       id: u.id,
       displayName: u.displayName,

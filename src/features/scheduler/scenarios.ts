@@ -47,48 +47,13 @@ const text = (t: string): Message => ({ type: "text", text: t });
 
 /**
  * Step delivery per route.
- * IFA / School: 3 messages on day 1 / 2 / 3.
+ * consultation: no drip — the booking link is sent once, immediately (by design).
+ * School: 3 messages on day 1 / 2 / 3.
  * Nurture: 1 soft follow on day 7.
  * Tone: 知的・権威寄り・絵文字控えめ (per client direction).
  */
 export const SCENARIOS: Record<Branch, StepDef[]> = {
-  ifa: [
-    {
-      step: 1,
-      delayDays: 1,
-      build: () => [
-        text(
-          "昨日はご回答ありがとうございました。\n" +
-            "資産規模が一定を超えると、“ご自身で運用する”だけでは守り切れない局面が訪れます。" +
-            "Wealth Partner社は、税務・不動産・金融を横断した「全資産の最適化」を担います。"
-        ),
-      ],
-    },
-    {
-      step: 2,
-      delayDays: 2,
-      build: () => [
-        text(
-          "代表は、クレディ・スイスをはじめとする世界のプライベートバンクで約11年。\n" +
-            "金融機関とは利害が逆の“顧客側に立つIFA”だからこそ提供できる視点があります。"
-        ),
-      ],
-    },
-    {
-      step: 3,
-      delayDays: 3,
-      build: () => [
-        ctaCard(
-          "EXCLUSIVE",
-          "基準をクリアされたあなたへ",
-          "税務・不動産・金融を横断し、あなたの全資産を最適化するWealth Partner社。" +
-            "その理念と実績を、まずは公式サイトでご確認ください。",
-          "ウェルスパートナーの詳細を見る ▶",
-          serverEnv.ifaSiteUrl || "https://example.com"
-        ),
-      ],
-    },
-  ],
+  consultation: [],
 
   school: [
     {

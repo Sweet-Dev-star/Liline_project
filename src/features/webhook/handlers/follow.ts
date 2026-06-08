@@ -8,8 +8,8 @@ import { prisma } from "@/src/lib/db";
 /**
  * Handle a friend-add.
  * - Brand-new user: greet with the click-to-LIFF button.
- * - Existing MEMBER (already routed to IFA / School) re-adding: ask whether to
- *   re-register (Yes/No card) instead of greeting again.
+ * - Existing MEMBER (already routed to 個別相談 / School) re-adding: ask whether
+ *   to re-register (Yes/No card) instead of greeting again.
  */
 export async function handleFollow(event: FollowEvent): Promise<void> {
   const userId = event.source.userId;
@@ -21,7 +21,7 @@ export async function handleFollow(event: FollowEvent): Promise<void> {
   const existing = userId
     ? await prisma.user.findUnique({ where: { id: userId }, select: { branch: true } })
     : null;
-  const isMember = existing?.branch === "ifa" || existing?.branch === "school";
+  const isMember = existing?.branch === "consultation" || existing?.branch === "school";
 
   // persist the friend (re-activates if they had blocked before)
   if (userId) {

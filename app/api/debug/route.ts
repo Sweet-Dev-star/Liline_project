@@ -109,12 +109,11 @@ export async function GET(req: Request) {
   if (url.searchParams.get("check") === "env") {
     return NextResponse.json({
       mainVideo: process.env.NEXT_PUBLIC_MAIN_VIDEO_URL ?? "(unset)",
-      ifaVideo: process.env.NEXT_PUBLIC_IFA_VIDEO_URL ?? "(unset)",
       schoolVideo: process.env.NEXT_PUBLIC_SCHOOL_VIDEO_URL ?? "(unset)",
       publicBaseUrl: process.env.PUBLIC_BASE_URL ?? "(unset)",
-      ifaBooking: process.env.IFA_BOOKING_URL ?? "(unset)",
+      consultBooking: process.env.CONSULT_BOOKING_URL ?? "(unset)",
+      consultThreshold: process.env.CONSULT_ASSET_THRESHOLD ?? "500m (default)",
       schoolLink: process.env.SCHOOL_LINK_URL ?? "(unset)",
-      ifaSite: process.env.IFA_SITE_URL ?? "(unset)",
       schoolSite: process.env.SCHOOL_SITE_URL ?? "(unset)",
       liffId: process.env.NEXT_PUBLIC_LIFF_ID ?? "(unset)",
       dripTestMode: process.env.DRIP_TEST_MODE === "1",

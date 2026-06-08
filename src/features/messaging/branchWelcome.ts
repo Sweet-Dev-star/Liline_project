@@ -71,21 +71,21 @@ function card(opts: {
  * Video is sent only when its real https URL is configured (placeholder-safe).
  */
 export function buildBranchWelcome(branch: Branch): Message[] {
-  if (branch === "ifa") {
-    const msgs: Message[] = [];
-    maybeVideo(msgs, publicEnv.ifaVideoUrl); // IFA 補足動画 (分岐後) — /ifa.mp4 + /ifa.jpg
-    msgs.push(
+  if (branch === "consultation") {
+    // No 補足動画, no drip — by design: just the scheduling link (minimal workload,
+    // and avoids any IFA-style sales positioning for 税理士法 compliance).
+    return [
       card({
-        eyebrow: "EXCLUSIVE",
-        title: "基準をクリアされた方へ",
+        eyebrow: "PRIVATE CONSULTATION",
+        title: "個別相談のご案内",
         body:
-          "資産規模が一定を超えると、“自分で運用する”だけでは守り切れない局面が訪れます。" +
-          "Wealth Partner社による全資産の最適化コンサルティングを、限られた方のみにご案内しています。",
-        ctaLabel: "個別セッションを確認する ▶",
-        ctaUrl: serverEnv.ifaBookingUrl || "https://example.com",
-      })
-    );
-    return msgs;
+          "ご回答ありがとうございます。\n" +
+          "ゆか姉による個別の無料相談をご希望いただきました。" +
+          "下記より、ご都合のよい日程をお選びください。",
+        ctaLabel: "無料相談の日程を調整する ▶",
+        ctaUrl: serverEnv.consultBookingUrl || "https://example.com",
+      }),
+    ];
   }
 
   if (branch === "school") {
