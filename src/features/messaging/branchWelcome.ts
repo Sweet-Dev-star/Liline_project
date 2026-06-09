@@ -99,8 +99,9 @@ export function buildBranchWelcome(branch: Branch): Message[] {
         body:
           "一流のプライベートバンカーに資産を託せる“本物”になるための登竜門。" +
           "金融機関の『カモ』にならない本質的な教養を、マネトレ大学で体系的に学べます。",
-        ctaLabel: "個別で相談したい方はこちら ▶",
-        ctaUrl: conversionUrl("school"),
+        ctaLabel: "ゆか姉の推奨環境を見る ▶",
+        // bridge LP (trust page) -> マネトレ大学, so it isn't an abrupt "add another OA".
+        ctaUrl: serverEnv.publicBaseUrl ? `${serverEnv.publicBaseUrl}/recommend` : conversionUrl("school"),
       })
     );
     return msgs;

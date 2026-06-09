@@ -134,6 +134,27 @@ export function AdminDashboard() {
     setSelected((prev) => (prev.size === users.length ? new Set() : new Set(users.map((u) => u.id))));
   }
 
+  async function setSuppressed(suppress: boolean) {
+    setMsg(""); setErr("");
+    if (!selected.size) return;
+    const label = suppress ? "配信停止" : "配信再開";
+    if (!confirm(`選択した${selected.size}名を${label}しますか？`)) return;
+    try {
+      const res = await fetch("/api/admin/users/suppress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ids: Array.from(selected), suppress }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "failed");
+      setMsg(`${data.updated}名を${label}しました。`);
+      setSelected(new Set());
+      await loadWith(token, false);
+    } catch (e) {
+      setErr(`${label}に失敗しました：` + (e as Error).message);
+    }
+  }
+
   async function deleteSelected() {
     setMsg(""); setErr("");
     if (!selected.size) return;
@@ -295,13 +316,17 @@ export function AdminDashboard() {
         <div className="adm-panel">
           <div className="adm-panel-head">
             <h2 className="adm-h2">登録ユーザー（最新100件）</h2>
-            <button
-              className="adm-btn danger"
-              onClick={deleteSelected}
-              disabled={selected.size === 0}
-            >
-              選択したユーザーを削除{selected.size > 0 ? `（${selected.size}）` : ""}
-            </button>
+            <div className="adm-actions">
+              <button className="adm-btn ghost" onClick={() => setSuppressed(true)} disabled={selected.size === 0}>
+                配信停止{selected.size > 0 ? `（${selected.size}）` : ""}
+              </button>
+              <button className="adm-btn ghost" onClick={() => setSuppressed(false)} disabled={selected.size === 0}>
+                配信再開
+              </button>
+              <button className="adm-btn danger" onClick={deleteSelected} disabled={selected.size === 0}>
+                削除{selected.size > 0 ? `（${selected.size}）` : ""}
+              </button>
+            </div>
           </div>
           <div className="adm-tablewrap">
             <table className="adm-table">
@@ -331,10 +356,16 @@ export function AdminDashboard() {
                     </td>
                     <td>{u.displayName ?? "—"}</td>
                     <td>{u.branch ? <span className="pill route">{u.branch}</span> : "—"}</td>
-                    <td><span className={"pill " + (u.status === "active" ? "active" : "blocked")}>{u.status}</span></td>
+                    <td>
+                      <span className={"pill " + (u.status === "active" ? "active" : "blocked")}>{u.status}</span>
+                      {u.tags.includes("suppressed") && <span className="pill suppressed">停止中</span>}
+                    </td>
                     <td>
                       <div className="tagcell">
-                        {u.tags.length ? u.tags.map((t) => <span className="tag" key={t}>{t}</span>) : "—"}
+                        {(() => {
+                          const shown = u.tags.filter((t) => t !== "suppressed");
+                          return shown.length ? shown.map((t) => <span className="tag" key={t}>{t}</span>) : "—";
+                        })()}
                       </div>
                     </td>
                     <td>{new Date(u.registeredAt).toLocaleString("ja-JP")}</td>

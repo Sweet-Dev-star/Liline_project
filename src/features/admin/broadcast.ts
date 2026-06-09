@@ -15,10 +15,15 @@ export interface BroadcastResult {
  * Uses multicast in batches of 150 (LINE's per-call limit). Blocked users are
  * excluded up front; per-batch failures are counted but don't abort the run.
  */
+/** Tag marking a subscriber as suppressed (excluded from broadcasts/drips). */
+export const SUPPRESS_TAG = "suppressed";
+
 export async function sendBroadcast(tag: string | null, text: string): Promise<BroadcastResult> {
+  // never message suppressed (配信停止) subscribers
+  const notSuppressed = { NOT: { tags: { some: { tag: SUPPRESS_TAG } } } };
   const where = tag
-    ? { status: "active", tags: { some: { tag } } }
-    : { status: "active" };
+    ? { status: "active", tags: { some: { tag } }, ...notSuppressed }
+    : { status: "active", ...notSuppressed };
 
   const users = await prisma.user.findMany({ where, select: { id: true } });
   const ids = users.map((u) => u.id);

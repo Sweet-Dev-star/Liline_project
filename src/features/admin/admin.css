@@ -77,6 +77,13 @@
 /* panel header row (title + action button) */
 .adm-panel-head{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
 .adm-panel-head .adm-h2{ margin:0; }
+.adm-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+/* outline (ghost) button */
+.adm-btn.ghost{ background:transparent; border:1px solid var(--line); color:var(--muted);
+  padding:10px 20px; font-size:13px; box-shadow:none; }
+.adm-btn.ghost:hover:not(:disabled){ border-color:var(--gold); color:var(--goldsoft);
+  transform:none; box-shadow:none; }
 
 /* ---- table ---- */
 .adm-tablewrap{ overflow-x:auto; border-radius:14px; border:1px solid var(--line); }
@@ -96,6 +103,7 @@
 .pill.active{ background:rgba(46,160,67,.16); color:#5fd07a; border:1px solid rgba(46,160,67,.4); }
 .pill.blocked{ background:rgba(220,80,80,.14); color:#f08a8a; border:1px solid rgba(220,80,80,.4); }
 .pill.route{ background:rgba(201,162,39,.14); color:var(--goldsoft); border:1px solid rgba(201,162,39,.35); }
+.pill.suppressed{ background:rgba(150,120,30,.18); color:#e7c45a; border:1px solid rgba(201,162,39,.45); margin-left:6px; }
 
 .tagcell{ display:flex; flex-wrap:wrap; gap:6px; }
 .tag{ font-size:11px; color:var(--muted); background:rgba(255,255,255,.05); border:1px solid var(--line);
