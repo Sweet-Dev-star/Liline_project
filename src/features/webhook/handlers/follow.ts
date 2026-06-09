@@ -34,7 +34,12 @@ export async function handleFollow(event: FollowEvent): Promise<void> {
 
   // existing member -> confirm re-registration; otherwise greet as a new friend
   const messages = isMember ? buildReregisterPrompt(displayName) : buildGreeting(displayName);
-  const via = await replyOrPush(userId, event.replyToken, messages);
+
+  // Deliver via PUSH (pass no replyToken) — NOT the follow reply token.
+  // On a re-add the follow reply token is unreliable: LINE can return 200 for the
+  // reply yet never deliver it, which left the greeting invisible. Push is proven
+  // reliable to an active friend, so we use it for this critical first message.
+  const via = await replyOrPush(userId, undefined, messages);
   console.log(
     `[webhook] follow: ${isMember ? "reregister-prompt" : "greeted"} via ${via} (${displayName ?? "unknown"})`
   );
