@@ -2,7 +2,7 @@ import type { MessageEvent } from "@line/bot-sdk";
 import { replyOrPush } from "@/src/lib/line/send";
 import { getProfileSafe } from "@/src/lib/line/profile";
 import { buildGreeting } from "@/src/features/messaging/greeting";
-import { buildEcho } from "@/src/features/messaging/echo";
+import { conciergeReply } from "@/src/features/ai/concierge";
 import { prisma } from "@/src/lib/db";
 
 /**
@@ -31,12 +31,14 @@ export async function handleMessage(event: MessageEvent): Promise<void> {
   const text = event.message.text.trim();
   const keyword = text.toLowerCase();
 
-  const messages =
-    keyword === "menu" || keyword === "greeting"
-      ? buildGreeting(null)
-      : buildEcho(text);
+  // "menu"/"greeting" replays the greeting; any other text → AI concierge.
+  if (keyword === "menu" || keyword === "greeting") {
+    const via = await replyOrPush(userId, event.replyToken, buildGreeting(null));
+    console.log(`[message] greeting delivered via ${via}`);
+    return;
+  }
 
-  const kind = keyword === "menu" || keyword === "greeting" ? "greeting" : "echo";
+  const messages = await conciergeReply(userId, text);
   const via = await replyOrPush(userId, event.replyToken, messages);
-  console.log(`[message] ${kind} delivered via ${via}`);
+  console.log(`[message] concierge delivered via ${via}`);
 }
