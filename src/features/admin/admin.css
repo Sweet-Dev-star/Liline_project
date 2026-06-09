@@ -115,17 +115,26 @@
   transition:width .6s cubic-bezier(.16,.7,.2,1); }
 .fr-bar-accent{ background:linear-gradient(90deg, rgba(46,160,67,.5), #4fd07a); }
 
-/* ---- date pickers (range + single day) ---- */
-.adm-daterange{ display:flex; align-items:center; gap:14px; margin:0 0 18px; flex-wrap:wrap; }
-.adm-daterange label{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
-.adm-daterange input[type=date]{
-  background:rgba(255,255,255,.06); border:1px solid var(--line); color:var(--ink);
-  border-radius:10px; padding:8px 12px; font-size:13px; font-family:inherit; color-scheme:dark;
-  cursor:pointer; transition:border-color .3s; }
-.adm-daterange input[type=date]:focus{ outline:none; border-color:var(--gold); }
+/* ---- date pickers ---- */
+.adm-daterange{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 18px; }
+.adm-panel-head .adm-daterange{ margin:0; }
+.adm-date-label{ font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--muted); }
+.adm-date{
+  appearance:none; -webkit-appearance:none;
+  background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  border:1px solid rgba(201,162,39,.30); color:var(--ink);
+  border-radius:12px; padding:9px 14px; font-size:13px; font-weight:600; font-family:inherit;
+  color-scheme:dark; cursor:pointer; transition:border-color .25s, box-shadow .25s, background .25s;
+}
+.adm-date:hover{ border-color:rgba(201,162,39,.6);
+  background:linear-gradient(180deg, rgba(201,162,39,.12), rgba(255,255,255,.03)); }
+.adm-date:focus{ outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,162,39,.15); }
+.adm-date::-webkit-calendar-picker-indicator{
+  cursor:pointer; opacity:.65;
+  filter:invert(72%) sepia(60%) saturate(420%) hue-rotate(2deg) brightness(95%);
+}
+.adm-date::-webkit-calendar-picker-indicator:hover{ opacity:1; }
 .adm-daterange .sep{ color:var(--faint); }
-.day-summary{ display:flex; flex-wrap:wrap; gap:18px; margin:0 0 16px; font-size:13px; color:var(--muted); }
-.day-summary b{ color:var(--goldsoft); font-size:16px; margin-left:5px; }
 
 /* ---- daily chart ---- */
 .daily{ display:flex; align-items:flex-end; gap:6px; height:96px; padding:6px 2px 0; }

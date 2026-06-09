@@ -10,13 +10,12 @@ interface Stats {
   consultation: number; school: number; nurture: number;
   pending: number; sent: number; surveys: number;
 }
-interface Clicks { consult: number; school: number; mtu: number; }
 interface DailyPoint { date: string; adds: number; surveys: number; clicks: number; }
-interface DayTotals {
+/** Funnel totals for a single selected date. */
+interface FunnelTotals {
   adds: number; surveys: number; consultation: number; school: number; nurture: number;
   clicks: { consult: number; school: number; mtu: number };
 }
-interface DayData { totals: DayTotals; records: Row[]; }
 interface Row {
   id: string; displayName: string | null; branch: string | null;
   status: string; registeredAt: string; tags: string[];
@@ -26,12 +25,11 @@ export function AdminDashboard() {
   const [token, setToken] = useState("");
   const [authed, setAuthed] = useState(false);
   const [stats, setStats] = useState<Stats>();
-  const [clicks, setClicks] = useState<Clicks>();
   const [daily, setDaily] = useState<DailyPoint[]>([]);
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
-  const [dayDate, setDayDate] = useState("");
-  const [dayData, setDayData] = useState<DayData | null>(null);
+  const [funnelDate, setFunnelDate] = useState("");
+  const [funnelData, setFunnelData] = useState<FunnelTotals | null>(null);
   const [users, setUsers] = useState<Row[]>([]);
   const [broadcastTag, setBroadcastTag] = useState("");
   const [broadcastText, setBroadcastText] = useState("");
@@ -54,16 +52,13 @@ export function AdminDashboard() {
     }
   }, []);
 
-  // load a single day's records
-  const loadDay = useCallback(async (t: string, date: string) => {
+  // load the funnel totals for a single selected date
+  const loadFunnel = useCallback(async (t: string, date: string) => {
     try {
       const res = await fetch(`/api/admin/analytics?from=${date}&to=${date}`, {
         headers: { Authorization: `Bearer ${t}` },
       });
-      if (res.ok) {
-        const d = await res.json();
-        setDayData({ totals: d.totals, records: d.records });
-      }
+      if (res.ok) setFunnelData((await res.json()).totals);
     } catch {
       /* ignore */
     }
@@ -77,27 +72,26 @@ export function AdminDashboard() {
         if (!res.ok) throw new Error("unauthorized");
         const data = await res.json();
         setStats(data.stats);
-        setClicks(data.clicks);
         setUsers(data.users);
         setAuthed(true);
         if (persist) localStorage.setItem(TOKEN_KEY, t);
 
-        // initialise the date controls (default range = last 14 days, day = today)
+        // initialise the date controls (funnel = today, range chart = last 14 days)
         const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
         const from14 = new Date(Date.now() + 9 * 60 * 60 * 1000 - 13 * 86400000)
           .toISOString()
           .slice(0, 10);
+        setFunnelDate(today);
         setRangeFrom(from14);
         setRangeTo(today);
-        setDayDate(today);
+        loadFunnel(t, today);
         loadRange(t, from14, today);
-        loadDay(t, today);
         return true;
       } catch {
         return false;
       }
     },
-    [loadRange, loadDay]
+    [loadRange, loadFunnel]
   );
 
   // on mount: if a saved token exists, auto-login (survives reload)
@@ -193,11 +187,11 @@ export function AdminDashboard() {
     setRangeTo(nt);
     loadRange(token, rangeFrom, nt);
   }
-  function onDayChange(v: string) {
+  function onFunnelDateChange(v: string) {
     if (!v) return;
     const nd = v > todayJst ? todayJst : v;
-    setDayDate(nd);
-    loadDay(token, nd);
+    setFunnelDate(nd);
+    loadFunnel(token, nd);
   }
 
   if (!authed) {
@@ -239,34 +233,45 @@ export function AdminDashboard() {
           </div>
         )}
 
-        {stats && (
+        {funnelData && (
           <div className="adm-panel">
-            <h2 className="adm-h2">ファネル分析</h2>
-            <div className="funnel">
-              <FunnelRow label="友だち追加" value={stats.total} max={stats.total} />
-              <FunnelRow label="アンケート完了" value={stats.surveys} prev={stats.total} max={stats.total} />
-              <FunnelRow label="個別相談（適格）" value={stats.consultation} prev={stats.surveys} max={stats.total} indent />
-              <FunnelRow label="マネトレ大学（School）" value={stats.school} prev={stats.surveys} max={stats.total} indent />
-              <FunnelRow label="育成（Nurture）" value={stats.nurture} prev={stats.surveys} max={stats.total} indent />
-              {clicks && (
-                <>
-                  <FunnelRow label="相談リンク クリック" value={clicks.consult} prev={stats.consultation} max={stats.total} accent />
-                  <FunnelRow label="マネトレ リンク クリック" value={clicks.school + clicks.mtu} prev={stats.school} max={stats.total} accent />
-                </>
-              )}
+            <div className="adm-panel-head">
+              <h2 className="adm-h2">ファネル分析</h2>
+              <div className="adm-daterange">
+                <span className="adm-date-label">対象日</span>
+                <input className="adm-date" type="date" value={funnelDate} max={todayJst}
+                  onChange={(e) => onFunnelDateChange(e.target.value)} />
+              </div>
             </div>
 
-            <h3 className="adm-h3">期間別の推移</h3>
+            {(() => {
+              const f = funnelData;
+              const fmax = Math.max(
+                f.adds, f.surveys, f.consultation, f.school, f.nurture,
+                f.clicks.consult, f.clicks.school + f.clicks.mtu, 1
+              );
+              return (
+                <div className="funnel">
+                  <FunnelRow label="友だち追加" value={f.adds} max={fmax} />
+                  <FunnelRow label="アンケート完了" value={f.surveys} prev={f.adds} max={fmax} />
+                  <FunnelRow label="個別相談（適格）" value={f.consultation} prev={f.surveys} max={fmax} indent />
+                  <FunnelRow label="マネトレ大学（School）" value={f.school} prev={f.surveys} max={fmax} indent />
+                  <FunnelRow label="育成（Nurture）" value={f.nurture} prev={f.surveys} max={fmax} indent />
+                  <FunnelRow label="相談リンク クリック" value={f.clicks.consult} prev={f.consultation} max={fmax} accent />
+                  <FunnelRow label="マネトレ リンク クリック" value={f.clicks.school + f.clicks.mtu} prev={f.school} max={fmax} accent />
+                </div>
+              );
+            })()}
+
+            <h3 className="adm-h3">期間別の推移（下のグラフ専用）</h3>
             <div className="adm-daterange">
-              <label>開始
-                <input type="date" value={rangeFrom} max={todayJst}
-                  onChange={(e) => onFromChange(e.target.value)} />
-              </label>
+              <span className="adm-date-label">開始</span>
+              <input className="adm-date" type="date" value={rangeFrom} max={todayJst}
+                onChange={(e) => onFromChange(e.target.value)} />
               <span className="sep">〜</span>
-              <label>終了
-                <input type="date" value={rangeTo} min={rangeFrom} max={todayJst}
-                  onChange={(e) => onToChange(e.target.value)} />
-              </label>
+              <span className="adm-date-label">終了</span>
+              <input className="adm-date" type="date" value={rangeTo} min={rangeFrom} max={todayJst}
+                onChange={(e) => onToChange(e.target.value)} />
             </div>
             <DailyChart data={daily} />
             <div className="daily-legend">
@@ -274,51 +279,6 @@ export function AdminDashboard() {
               <span><i className="lg lg-surveys" />アンケート</span>
               <span><i className="lg lg-clicks" />クリック</span>
             </div>
-          </div>
-        )}
-
-        {stats && (
-          <div className="adm-panel">
-            <h2 className="adm-h2">特定日の記録</h2>
-            <div className="adm-daterange">
-              <label>日付
-                <input type="date" value={dayDate} max={todayJst}
-                  onChange={(e) => onDayChange(e.target.value)} />
-              </label>
-            </div>
-            {dayData && (
-              <>
-                <div className="day-summary">
-                  <span>友だち追加 <b>{dayData.totals.adds}</b></span>
-                  <span>アンケート <b>{dayData.totals.surveys}</b></span>
-                  <span>個別相談 <b>{dayData.totals.consultation}</b></span>
-                  <span>School <b>{dayData.totals.school}</b></span>
-                  <span>育成 <b>{dayData.totals.nurture}</b></span>
-                  <span>クリック <b>{dayData.totals.clicks.consult + dayData.totals.clicks.school + dayData.totals.clicks.mtu}</b></span>
-                </div>
-                <div className="adm-tablewrap">
-                  <table className="adm-table">
-                    <thead>
-                      <tr><th>表示名</th><th>ルート</th><th>状態</th><th>登録時刻</th></tr>
-                    </thead>
-                    <tbody>
-                      {dayData.records.length ? (
-                        dayData.records.map((r) => (
-                          <tr key={r.id}>
-                            <td>{r.displayName ?? "—"}</td>
-                            <td>{r.branch ? <span className="pill route">{r.branch}</span> : "—"}</td>
-                            <td><span className={"pill " + (r.status === "active" ? "active" : "blocked")}>{r.status}</span></td>
-                            <td>{new Date(r.registeredAt).toLocaleString("ja-JP")}</td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr><td colSpan={4} style={{ color: "var(--faint)" }}>この日の記録はありません。</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
           </div>
         )}
 
