@@ -105,6 +105,7 @@ export function SurveyApp({ liffId, videoUrl }: { liffId: string; videoUrl: stri
           index={3}
           total={3}
           title={q3.title}
+          lead={q3.lead}
           options={q3.options}
           selected={consult}
           onSelect={(v) => {
