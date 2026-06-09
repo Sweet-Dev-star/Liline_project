@@ -35,9 +35,13 @@ export const serverEnv = {
   get cronSecret() {
     return optional("CRON_SECRET");
   },
-  /** ゆか姉's scheduling tool (Spir) link, sent to qualified consultation leads */
+  /** ゆか姉's scheduling tool (Spir) link, sent to qualified consultation leads.
+   *  Defaults to the live Spir link; CONSULT_BOOKING_URL env overrides if set. */
   get consultBookingUrl() {
-    return optional("CONSULT_BOOKING_URL");
+    return optional(
+      "CONSULT_BOOKING_URL",
+      "https://app.spirinc.com/t/zrHOxA9DtsuHRyCGFk6cc/as/ShQiSQQH2n1XaY0qGc5nO/confirm"
+    );
   },
   /** School (マネトレ大学) conversion endpoints — unchanged */
   get schoolLinkUrl() {
