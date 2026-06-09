@@ -111,7 +111,7 @@ export async function GET(req: Request) {
       mainVideo: process.env.NEXT_PUBLIC_MAIN_VIDEO_URL ?? "(unset)",
       schoolVideo: process.env.NEXT_PUBLIC_SCHOOL_VIDEO_URL ?? "(unset)",
       publicBaseUrl: process.env.PUBLIC_BASE_URL ?? "(unset)",
-      consultBooking: process.env.CONSULT_BOOKING_URL ?? "(unset)",
+      consultBooking: serverEnv.consultBookingUrl || "(unset)", // resolved (env or code default)
       schoolLink: process.env.SCHOOL_LINK_URL ?? "(unset)",
       schoolSite: process.env.SCHOOL_SITE_URL ?? "(unset)",
       liffId: process.env.NEXT_PUBLIC_LIFF_ID ?? "(unset)",
