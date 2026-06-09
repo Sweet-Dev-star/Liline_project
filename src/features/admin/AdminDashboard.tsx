@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { DatePicker } from "./DatePicker";
 import "./admin.css";
 
 const TOKEN_KEY = "tsl_admin_token";
@@ -239,8 +240,7 @@ export function AdminDashboard() {
               <h2 className="adm-h2">ファネル分析</h2>
               <div className="adm-daterange">
                 <span className="adm-date-label">対象日</span>
-                <input className="adm-date" type="date" value={funnelDate} max={todayJst}
-                  onChange={(e) => onFunnelDateChange(e.target.value)} />
+                <DatePicker value={funnelDate} max={todayJst} onChange={onFunnelDateChange} align="right" />
               </div>
             </div>
 
@@ -266,12 +266,10 @@ export function AdminDashboard() {
             <h3 className="adm-h3">期間別の推移（下のグラフ専用）</h3>
             <div className="adm-daterange">
               <span className="adm-date-label">開始</span>
-              <input className="adm-date" type="date" value={rangeFrom} max={todayJst}
-                onChange={(e) => onFromChange(e.target.value)} />
+              <DatePicker value={rangeFrom} max={todayJst} onChange={onFromChange} />
               <span className="sep">〜</span>
               <span className="adm-date-label">終了</span>
-              <input className="adm-date" type="date" value={rangeTo} min={rangeFrom} max={todayJst}
-                onChange={(e) => onToChange(e.target.value)} />
+              <DatePicker value={rangeTo} min={rangeFrom} max={todayJst} onChange={onToChange} />
             </div>
             <DailyChart data={daily} />
             <div className="daily-legend">
