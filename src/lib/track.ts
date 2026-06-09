@@ -20,6 +20,12 @@ export function conversionUrl(target: keyof typeof TARGETS): string {
   return `${base}/api/go?to=${encodeURIComponent(String(target))}`;
 }
 
+/** The bridge LP (trust page) URL; falls back to the tracked school link. */
+export function recommendUrl(): string {
+  const base = serverEnv.publicBaseUrl;
+  return base && /^https:\/\//.test(base) ? `${base}/recommend` : conversionUrl("school");
+}
+
 /** Resolve a target key to its real destination URL (used by /api/go). */
 export function resolveTarget(target: string): string | null {
   const fn = TARGETS[target];

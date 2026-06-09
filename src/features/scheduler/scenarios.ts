@@ -1,6 +1,6 @@
 import type { messagingApi } from "@line/bot-sdk";
 import type { Branch } from "@/src/shared/branch";
-import { conversionUrl } from "@/src/lib/track";
+import { recommendUrl } from "@/src/lib/track";
 import { theme } from "@/src/features/messaging/theme";
 
 type Message = messagingApi.Message;
@@ -46,11 +46,11 @@ function ctaCard(eyebrow: string, title: string, body: string, label: string, ur
 const text = (t: string): Message => ({ type: "text", text: t });
 
 /**
- * Step delivery per route.
+ * Step delivery per route. Tone: 知的・権威寄り・絵文字控えめ.
  * consultation: no drip — the booking link is sent once, immediately (by design).
- * School: 3 messages on day 1 / 2 / 3.
- * Nurture: 1 soft follow on day 7.
- * Tone: 知的・権威寄り・絵文字控えめ (per client direction).
+ * School: a 4-step EDUCATION nurture (value → 失敗回避 → authority → CTA), ending
+ *         at the bridge LP (処方箋) so マネトレ大学 reads as a recommendation, not an ad.
+ * Nurture: a soft follow + one gentle re-engagement toward the same LP.
  */
 export const SCENARIOS: Record<Branch, StepDef[]> = {
   consultation: [],
@@ -62,7 +62,8 @@ export const SCENARIOS: Record<Branch, StepDef[]> = {
       build: () => [
         text(
           "昨日はご回答ありがとうございました。\n" +
-            "“金融機関のカモ”にならない本質的なお金の教養は、早く身につけるほど効いてきます。"
+            "資産を“増やすフェーズ”で最も差がつくのは、実は知識の「順番」です。\n" +
+            "高度な節税より先に、ご自身でお金を増やす基礎体力を固めることが、結果的に最短ルートになります。"
         ),
       ],
     },
@@ -71,8 +72,9 @@ export const SCENARIOS: Record<Branch, StepDef[]> = {
       delayDays: 2,
       build: () => [
         text(
-          "マネトレ大学の代表はゴールドマン・サックス出身。\n" +
-            "金融と不動産を融合した、極めて実践的なカリキュラムが特長です。"
+          "「金融機関に勧められるまま」では、知らないうちに損をしてしまう——\n" +
+            "これは資産形成の初期に、最も多い失敗です。\n" +
+            "大切なのは誰かに任せきりにせず、“自分の判断軸”を持つこと。その土台が、お金の基礎リテラシーです。"
         ),
       ],
     },
@@ -80,12 +82,24 @@ export const SCENARIOS: Record<Branch, StepDef[]> = {
       step: 3,
       delayDays: 3,
       build: () => [
+        text(
+          "私が『マネトレ大学』を推薦する理由は、その“本質性”にあります。\n" +
+            "代表はゴールドマン・サックス出身。金融と不動産を融合した実践的なカリキュラムで、" +
+            "表面的なテクニックではなく、一生使える土台が身につきます。"
+        ),
+      ],
+    },
+    {
+      step: 4,
+      delayDays: 5,
+      build: () => [
         ctaCard(
-          "GATEWAY",
-          "本物の富裕層を目指すあなたへ",
-          "資産が1億を超えてから学ぶのでは遅い。今このステージだからこそ、登竜門で基礎を固める価値があります。",
-          "マネトレ大学の詳細を見る ▶",
-          conversionUrl("mtu")
+          "RECOMMENDED",
+          "次の一歩を、確かなものに",
+          "資産拡大フェーズの“今”こそ、基礎を固める価値があります。" +
+            "ゆか姉が推奨する学習環境の詳細を、下記よりご確認ください。",
+          "ゆか姉の推奨環境を見る ▶",
+          recommendUrl()
         ),
       ],
     },
@@ -97,8 +111,23 @@ export const SCENARIOS: Record<Branch, StepDef[]> = {
       delayDays: 7,
       build: () => [
         text(
-          "その後、資産防衛の状況はいかがでしょうか。\n" +
-            "これからの資産形成に役立つ情報をお届けします。気になるテーマがあれば、お気軽にメッセージください。"
+          "その後、資産形成の状況はいかがでしょうか。\n" +
+            "これからの資産づくりに役立つ情報を、定期的にお届けしてまいります。" +
+            "気になるテーマがあれば、いつでもメッセージでお知らせください。"
+        ),
+      ],
+    },
+    {
+      step: 2,
+      delayDays: 14,
+      build: () => [
+        ctaCard(
+          "FOR YOUR FUTURE",
+          "“お金の基礎”から始めませんか",
+          "もし「自分の力で資産を増やす力を身につけたい」と感じられたら、" +
+            "ゆか姉が推奨する学習環境を、一度のぞいてみてください。",
+          "推奨環境を見てみる ▶",
+          recommendUrl()
         ),
       ],
     },
