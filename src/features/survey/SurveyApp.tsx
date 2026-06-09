@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import liff from "@line/liff";
 import type { AssetBand, IncomeBand, ConsultWish } from "@/src/shared/branch";
+import { isConsultEligible } from "@/src/shared/branch";
 import { ui } from "./theme";
-import { Q1_ASSETS, Q2_INCOME, Q3_CONSULT } from "./questions";
+import { Q1_ASSETS, Q2_INCOME, Q3_CONSULT, Q3_INFO } from "./questions";
 import { VideoBackground } from "./components/VideoBackground";
 import { IntroVideo } from "./components/IntroVideo";
 import { QuestionStep } from "./components/QuestionStep";
@@ -53,6 +54,10 @@ export function SurveyApp({ liffId, videoUrl }: { liffId: string; videoUrl: stri
   // poster image lives next to the video (same path, .jpg) — see public/*-audio.jpg
   const poster = videoUrl ? videoUrl.replace(/\.mp4$/i, ".jpg") : undefined;
 
+  // Q3 is dynamic: consultation question for eligible respondents, otherwise the
+  // "useful info?" question. Same yes/no shape, so the API re-derives the meaning.
+  const q3 = assets && income && isConsultEligible(assets, income) ? Q3_CONSULT : Q3_INFO;
+
   // muted ambient background is shown only during the questions; the intro uses
   // the tap-to-play IntroVideo (with sound) instead.
   const showBackground = phase === "q1" || phase === "q2" || phase === "q3" || phase === "submitting";
@@ -99,8 +104,8 @@ export function SurveyApp({ liffId, videoUrl }: { liffId: string; videoUrl: stri
         <QuestionStep
           index={3}
           total={3}
-          title={Q3_CONSULT.title}
-          options={Q3_CONSULT.options}
+          title={q3.title}
+          options={q3.options}
           selected={consult}
           onSelect={(v) => {
             setConsult(v);

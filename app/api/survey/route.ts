@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { decideBranch, ASSET_VALUES, INCOME_VALUES, CONSULT_VALUES } from "@/src/shared/branch";
 import type { SurveyInput } from "@/src/shared/branch";
-import { serverEnv } from "@/src/config/env";
 import { verifyLiffIdToken } from "@/src/features/survey/verifyToken";
 import { saveSurvey } from "@/src/features/survey/saveSurvey";
 import { buildBranchWelcome } from "@/src/features/messaging/branchWelcome";
@@ -38,7 +37,7 @@ export async function POST(req: Request) {
   }
 
   const input = { assets, income, consult } as SurveyInput;
-  const branch = decideBranch(input, serverEnv.consultAssetThreshold);
+  const branch = decideBranch(input);
 
   // Was this user already routed? If they re-submit the SAME branch we must NOT
   // push another welcome card or re-fire the drip — that's what produced the

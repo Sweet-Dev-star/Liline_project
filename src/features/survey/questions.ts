@@ -26,7 +26,10 @@ export const Q2_INCOME: { title: string; options: Option<IncomeBand>[] } = {
   ],
 };
 
-/** Q3 — whether they want a free 1:1 consultation with ゆか姉 (the tax accountant). */
+/**
+ * Q3 — shown to consultation-eligible respondents (5億以上、または3〜5億かつ年収2,000万以上).
+ * Whether they want a free 1:1 consultation with ゆか姉 (the tax accountant).
+ */
 export const Q3_CONSULT: { title: string; options: Option<ConsultWish>[] } = {
   title: "税理士・ゆか姉による「個別の無料相談」をご希望されますか。",
   options: [
@@ -39,6 +42,25 @@ export const Q3_CONSULT: { title: string; options: Option<ConsultWish>[] } = {
       value: "no",
       label: "いいえ、まずは情報を受け取りたい",
       sub: "今は有益な情報の受け取りを希望する",
+    },
+  ],
+};
+
+/**
+ * Q3 (alternate) — shown to everyone NOT consultation-eligible (マネトレ大学導線のみ).
+ * Whether they want to receive useful information.
+ */
+export const Q3_INFO: { title: string; options: Option<ConsultWish>[] } = {
+  title: "今後、資産形成に役立つ有益な情報をお受け取りになりますか。",
+  options: [
+    {
+      value: "yes",
+      label: "はい、受け取りたい",
+      sub: "マネトレ大学の学びや、最新の情報を受け取る",
+    },
+    {
+      value: "no",
+      label: "いいえ、今は控えます",
     },
   ],
 };

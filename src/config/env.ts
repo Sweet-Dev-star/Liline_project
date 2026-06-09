@@ -39,13 +39,6 @@ export const serverEnv = {
   get consultBookingUrl() {
     return optional("CONSULT_BOOKING_URL");
   },
-  /**
-   * Minimum asset tier for the consultation. "500m" = 5億円以上 (default),
-   * "300m" = 3億円以上. Lowering the bar later is just this env change.
-   */
-  get consultAssetThreshold() {
-    return optional("CONSULT_ASSET_THRESHOLD", "500m");
-  },
   /** School (マネトレ大学) conversion endpoints — unchanged */
   get schoolLinkUrl() {
     return optional("SCHOOL_LINK_URL");
