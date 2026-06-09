@@ -10,6 +10,8 @@ interface Stats {
   consultation: number; school: number; nurture: number;
   pending: number; sent: number; surveys: number;
 }
+interface Clicks { consult: number; school: number; mtu: number; }
+interface DailyPoint { date: string; adds: number; surveys: number; clicks: number; }
 interface Row {
   id: string; displayName: string | null; branch: string | null;
   status: string; registeredAt: string; tags: string[];
@@ -19,6 +21,8 @@ export function AdminDashboard() {
   const [token, setToken] = useState("");
   const [authed, setAuthed] = useState(false);
   const [stats, setStats] = useState<Stats>();
+  const [clicks, setClicks] = useState<Clicks>();
+  const [daily, setDaily] = useState<DailyPoint[]>([]);
   const [users, setUsers] = useState<Row[]>([]);
   const [broadcastTag, setBroadcastTag] = useState("");
   const [broadcastText, setBroadcastText] = useState("");
@@ -33,6 +37,8 @@ export function AdminDashboard() {
       if (!res.ok) throw new Error("unauthorized");
       const data = await res.json();
       setStats(data.stats);
+      setClicks(data.clicks);
+      setDaily(data.daily ?? []);
       setUsers(data.users);
       setAuthed(true);
       if (persist) localStorage.setItem(TOKEN_KEY, t);
@@ -159,6 +165,33 @@ export function AdminDashboard() {
           </div>
         )}
 
+        {stats && (
+          <div className="adm-panel">
+            <h2 className="adm-h2">ファネル分析</h2>
+            <div className="funnel">
+              <FunnelRow label="友だち追加" value={stats.total} max={stats.total} />
+              <FunnelRow label="アンケート完了" value={stats.surveys} prev={stats.total} max={stats.total} />
+              <FunnelRow label="個別相談（適格）" value={stats.consultation} prev={stats.surveys} max={stats.total} indent />
+              <FunnelRow label="マネトレ大学（School）" value={stats.school} prev={stats.surveys} max={stats.total} indent />
+              <FunnelRow label="育成（Nurture）" value={stats.nurture} prev={stats.surveys} max={stats.total} indent />
+              {clicks && (
+                <>
+                  <FunnelRow label="相談リンク クリック" value={clicks.consult} prev={stats.consultation} max={stats.total} accent />
+                  <FunnelRow label="マネトレ リンク クリック" value={clicks.school + clicks.mtu} prev={stats.school} max={stats.total} accent />
+                </>
+              )}
+            </div>
+
+            <h3 className="adm-h3">直近14日の推移</h3>
+            <DailyChart data={daily} />
+            <div className="daily-legend">
+              <span><i className="lg lg-adds" />友だち追加</span>
+              <span><i className="lg lg-surveys" />アンケート</span>
+              <span><i className="lg lg-clicks" />クリック</span>
+            </div>
+          </div>
+        )}
+
         <div className="adm-panel">
           <h2 className="adm-h2">一斉配信（メルマガ）</h2>
           <p className="adm-hint">対象タグを空欄にすると、アクティブな全員に配信されます。例：branch:school</p>
@@ -233,6 +266,47 @@ function Stat({ label, value, accent }: { label: string; value: number; accent?:
     <div className={"adm-stat" + (accent ? " accent" : "")}>
       <div className="l">{label}</div>
       <div className="v">{value}</div>
+    </div>
+  );
+}
+
+function FunnelRow({
+  label, value, prev, max, accent, indent,
+}: {
+  label: string; value: number; prev?: number; max: number; accent?: boolean; indent?: boolean;
+}) {
+  const width = max > 0 && value > 0 ? Math.max(3, Math.round((value / max) * 100)) : 0;
+  const pct = prev && prev > 0 ? Math.round((value / prev) * 100) : null;
+  return (
+    <div className={"fr" + (indent ? " fr-indent" : "")}>
+      <div className="fr-head">
+        <span className="fr-label">{label}</span>
+        <span className="fr-val">
+          {value}
+          {pct !== null && <em className="fr-pct"> ({pct}%)</em>}
+        </span>
+      </div>
+      <div className="fr-track">
+        <div className={"fr-bar" + (accent ? " fr-bar-accent" : "")} style={{ width: `${width}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function DailyChart({ data }: { data: DailyPoint[] }) {
+  const max = Math.max(1, ...data.map((d) => Math.max(d.adds, d.surveys, d.clicks)));
+  return (
+    <div className="daily">
+      {data.map((d) => (
+        <div className="day" key={d.date} title={`${d.date}｜追加 ${d.adds} / 回答 ${d.surveys} / クリック ${d.clicks}`}>
+          <div className="day-bars">
+            <i className="db db-adds" style={{ height: `${(d.adds / max) * 100}%` }} />
+            <i className="db db-surveys" style={{ height: `${(d.surveys / max) * 100}%` }} />
+            <i className="db db-clicks" style={{ height: `${(d.clicks / max) * 100}%` }} />
+          </div>
+          <span className="day-label">{d.date.slice(5).replace("-", "/")}</span>
+        </div>
+      ))}
     </div>
   );
 }

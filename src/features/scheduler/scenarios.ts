@@ -1,6 +1,6 @@
 import type { messagingApi } from "@line/bot-sdk";
 import type { Branch } from "@/src/shared/branch";
-import { serverEnv } from "@/src/config/env";
+import { conversionUrl } from "@/src/lib/track";
 import { theme } from "@/src/features/messaging/theme";
 
 type Message = messagingApi.Message;
@@ -85,7 +85,7 @@ export const SCENARIOS: Record<Branch, StepDef[]> = {
           "本物の富裕層を目指すあなたへ",
           "資産が1億を超えてから学ぶのでは遅い。今このステージだからこそ、登竜門で基礎を固める価値があります。",
           "マネトレ大学の詳細を見る ▶",
-          serverEnv.schoolSiteUrl || "https://example.com"
+          conversionUrl("mtu")
         ),
       ],
     },

@@ -1,6 +1,7 @@
 import type { messagingApi } from "@line/bot-sdk";
 import type { Branch } from "@/src/shared/branch";
 import { serverEnv, publicEnv } from "@/src/config/env";
+import { conversionUrl } from "@/src/lib/track";
 import { theme } from "./theme";
 
 type Message = messagingApi.Message;
@@ -83,7 +84,7 @@ export function buildBranchWelcome(branch: Branch): Message[] {
           "ゆか姉による個別の無料相談をご希望いただきました。" +
           "下記より、ご都合のよい日程をお選びください。",
         ctaLabel: "無料相談の日程を調整する ▶",
-        ctaUrl: serverEnv.consultBookingUrl || "https://example.com",
+        ctaUrl: conversionUrl("consult"),
       }),
     ];
   }
@@ -99,7 +100,7 @@ export function buildBranchWelcome(branch: Branch): Message[] {
           "一流のプライベートバンカーに資産を託せる“本物”になるための登竜門。" +
           "金融機関の『カモ』にならない本質的な教養を、マネトレ大学で体系的に学べます。",
         ctaLabel: "個別で相談したい方はこちら ▶",
-        ctaUrl: serverEnv.schoolLinkUrl || "https://example.com",
+        ctaUrl: conversionUrl("school"),
       })
     );
     return msgs;

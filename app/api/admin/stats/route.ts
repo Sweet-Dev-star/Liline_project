@@ -13,7 +13,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const [total, active, blocked, consultation, school, nurture, pending, sent, surveys] = await Promise.all([
+  const DAYS = 14;
+  const cutoff = new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000);
+
+  const [
+    total, active, blocked, consultation, school, nurture, pending, sent, surveys,
+    clkConsult, clkSchool, clkMtu,
+    recentUsers, recentSurveys, recentClicks,
+  ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { status: "active" } }),
     prisma.user.count({ where: { status: "blocked" } }),
@@ -23,7 +30,27 @@ export async function GET(req: Request) {
     prisma.scheduledMessage.count({ where: { status: "pending" } }),
     prisma.scheduledMessage.count({ where: { status: "sent" } }),
     prisma.surveyResponse.count(),
+    prisma.eventLog.count({ where: { type: "click_consult" } }),
+    prisma.eventLog.count({ where: { type: "click_school" } }),
+    prisma.eventLog.count({ where: { type: "click_mtu" } }),
+    prisma.user.findMany({ where: { registeredAt: { gte: cutoff } }, select: { registeredAt: true } }),
+    prisma.surveyResponse.findMany({ where: { createdAt: { gte: cutoff } }, select: { createdAt: true } }),
+    prisma.eventLog.findMany({
+      where: { type: { startsWith: "click_" }, createdAt: { gte: cutoff } },
+      select: { createdAt: true },
+    }),
   ]);
+
+  // group the last 14 days by JST date
+  const jstDay = (d: Date) => new Date(d.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const days: string[] = [];
+  for (let i = DAYS - 1; i >= 0; i--) days.push(jstDay(new Date(Date.now() - i * 24 * 60 * 60 * 1000)));
+  const map: Record<string, { date: string; adds: number; surveys: number; clicks: number }> = {};
+  for (const d of days) map[d] = { date: d, adds: 0, surveys: 0, clicks: 0 };
+  for (const u of recentUsers) { const k = jstDay(u.registeredAt); if (map[k]) map[k].adds++; }
+  for (const s of recentSurveys) { const k = jstDay(s.createdAt); if (map[k]) map[k].surveys++; }
+  for (const c of recentClicks) { const k = jstDay(c.createdAt); if (map[k]) map[k].clicks++; }
+  const daily = days.map((d) => map[d]);
 
   const users = await prisma.user.findMany({
     orderBy: { registeredAt: "desc" },
@@ -33,6 +60,8 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     stats: { total, active, blocked, consultation, school, nurture, pending, sent, surveys },
+    clicks: { consult: clkConsult, school: clkSchool, mtu: clkMtu },
+    daily,
     users: users.map((u) => ({
       id: u.id,
       displayName: u.displayName,
