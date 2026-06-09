@@ -115,7 +115,19 @@
   transition:width .6s cubic-bezier(.16,.7,.2,1); }
 .fr-bar-accent{ background:linear-gradient(90deg, rgba(46,160,67,.5), #4fd07a); }
 
-/* ---- 14-day chart ---- */
+/* ---- date pickers (range + single day) ---- */
+.adm-daterange{ display:flex; align-items:center; gap:14px; margin:0 0 18px; flex-wrap:wrap; }
+.adm-daterange label{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+.adm-daterange input[type=date]{
+  background:rgba(255,255,255,.06); border:1px solid var(--line); color:var(--ink);
+  border-radius:10px; padding:8px 12px; font-size:13px; font-family:inherit; color-scheme:dark;
+  cursor:pointer; transition:border-color .3s; }
+.adm-daterange input[type=date]:focus{ outline:none; border-color:var(--gold); }
+.adm-daterange .sep{ color:var(--faint); }
+.day-summary{ display:flex; flex-wrap:wrap; gap:18px; margin:0 0 16px; font-size:13px; color:var(--muted); }
+.day-summary b{ color:var(--goldsoft); font-size:16px; margin-left:5px; }
+
+/* ---- daily chart ---- */
 .daily{ display:flex; align-items:flex-end; gap:6px; height:96px; padding:6px 2px 0; }
 .day{ flex:1; display:flex; flex-direction:column; align-items:center; height:100%; }
 .day-bars{ flex:1; display:flex; align-items:flex-end; justify-content:center; gap:2px; width:100%; }

@@ -12,6 +12,11 @@ interface Stats {
 }
 interface Clicks { consult: number; school: number; mtu: number; }
 interface DailyPoint { date: string; adds: number; surveys: number; clicks: number; }
+interface DayTotals {
+  adds: number; surveys: number; consultation: number; school: number; nurture: number;
+  clicks: { consult: number; school: number; mtu: number };
+}
+interface DayData { totals: DayTotals; records: Row[]; }
 interface Row {
   id: string; displayName: string | null; branch: string | null;
   status: string; registeredAt: string; tags: string[];
@@ -23,6 +28,10 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<Stats>();
   const [clicks, setClicks] = useState<Clicks>();
   const [daily, setDaily] = useState<DailyPoint[]>([]);
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
+  const [dayDate, setDayDate] = useState("");
+  const [dayData, setDayData] = useState<DayData | null>(null);
   const [users, setUsers] = useState<Row[]>([]);
   const [broadcastTag, setBroadcastTag] = useState("");
   const [broadcastText, setBroadcastText] = useState("");
@@ -30,23 +39,66 @@ export function AdminDashboard() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
-  // load stats with a given token; persist it on success so reload stays logged in
-  const loadWith = useCallback(async (t: string, persist: boolean): Promise<boolean> => {
+  // today's date in JST (YYYY-MM-DD) — used as the max selectable date
+  const todayJst = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  // load the date-range chart series
+  const loadRange = useCallback(async (t: string, from: string, to: string) => {
     try {
-      const res = await fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${t}` } });
-      if (!res.ok) throw new Error("unauthorized");
-      const data = await res.json();
-      setStats(data.stats);
-      setClicks(data.clicks);
-      setDaily(data.daily ?? []);
-      setUsers(data.users);
-      setAuthed(true);
-      if (persist) localStorage.setItem(TOKEN_KEY, t);
-      return true;
+      const res = await fetch(`/api/admin/analytics?from=${from}&to=${to}`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (res.ok) setDaily((await res.json()).daily ?? []);
     } catch {
-      return false;
+      /* ignore */
     }
   }, []);
+
+  // load a single day's records
+  const loadDay = useCallback(async (t: string, date: string) => {
+    try {
+      const res = await fetch(`/api/admin/analytics?from=${date}&to=${date}`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setDayData({ totals: d.totals, records: d.records });
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // load stats with a given token; persist it on success so reload stays logged in
+  const loadWith = useCallback(
+    async (t: string, persist: boolean): Promise<boolean> => {
+      try {
+        const res = await fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${t}` } });
+        if (!res.ok) throw new Error("unauthorized");
+        const data = await res.json();
+        setStats(data.stats);
+        setClicks(data.clicks);
+        setUsers(data.users);
+        setAuthed(true);
+        if (persist) localStorage.setItem(TOKEN_KEY, t);
+
+        // initialise the date controls (default range = last 14 days, day = today)
+        const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const from14 = new Date(Date.now() + 9 * 60 * 60 * 1000 - 13 * 86400000)
+          .toISOString()
+          .slice(0, 10);
+        setRangeFrom(from14);
+        setRangeTo(today);
+        setDayDate(today);
+        loadRange(t, from14, today);
+        loadDay(t, today);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [loadRange, loadDay]
+  );
 
   // on mount: if a saved token exists, auto-login (survives reload)
   useEffect(() => {
@@ -126,6 +178,28 @@ export function AdminDashboard() {
     }
   }
 
+  function onFromChange(v: string) {
+    if (!v) return;
+    const nf = v > todayJst ? todayJst : v;
+    const nt = rangeTo < nf ? nf : rangeTo;
+    setRangeFrom(nf);
+    if (nt !== rangeTo) setRangeTo(nt);
+    loadRange(token, nf, nt);
+  }
+  function onToChange(v: string) {
+    if (!v) return;
+    let nt = v > todayJst ? todayJst : v;
+    if (nt < rangeFrom) nt = rangeFrom;
+    setRangeTo(nt);
+    loadRange(token, rangeFrom, nt);
+  }
+  function onDayChange(v: string) {
+    if (!v) return;
+    const nd = v > todayJst ? todayJst : v;
+    setDayDate(nd);
+    loadDay(token, nd);
+  }
+
   if (!authed) {
     return (
       <div className="adm">
@@ -182,13 +256,69 @@ export function AdminDashboard() {
               )}
             </div>
 
-            <h3 className="adm-h3">直近14日の推移</h3>
+            <h3 className="adm-h3">期間別の推移</h3>
+            <div className="adm-daterange">
+              <label>開始
+                <input type="date" value={rangeFrom} max={todayJst}
+                  onChange={(e) => onFromChange(e.target.value)} />
+              </label>
+              <span className="sep">〜</span>
+              <label>終了
+                <input type="date" value={rangeTo} min={rangeFrom} max={todayJst}
+                  onChange={(e) => onToChange(e.target.value)} />
+              </label>
+            </div>
             <DailyChart data={daily} />
             <div className="daily-legend">
               <span><i className="lg lg-adds" />友だち追加</span>
               <span><i className="lg lg-surveys" />アンケート</span>
               <span><i className="lg lg-clicks" />クリック</span>
             </div>
+          </div>
+        )}
+
+        {stats && (
+          <div className="adm-panel">
+            <h2 className="adm-h2">特定日の記録</h2>
+            <div className="adm-daterange">
+              <label>日付
+                <input type="date" value={dayDate} max={todayJst}
+                  onChange={(e) => onDayChange(e.target.value)} />
+              </label>
+            </div>
+            {dayData && (
+              <>
+                <div className="day-summary">
+                  <span>友だち追加 <b>{dayData.totals.adds}</b></span>
+                  <span>アンケート <b>{dayData.totals.surveys}</b></span>
+                  <span>個別相談 <b>{dayData.totals.consultation}</b></span>
+                  <span>School <b>{dayData.totals.school}</b></span>
+                  <span>育成 <b>{dayData.totals.nurture}</b></span>
+                  <span>クリック <b>{dayData.totals.clicks.consult + dayData.totals.clicks.school + dayData.totals.clicks.mtu}</b></span>
+                </div>
+                <div className="adm-tablewrap">
+                  <table className="adm-table">
+                    <thead>
+                      <tr><th>表示名</th><th>ルート</th><th>状態</th><th>登録時刻</th></tr>
+                    </thead>
+                    <tbody>
+                      {dayData.records.length ? (
+                        dayData.records.map((r) => (
+                          <tr key={r.id}>
+                            <td>{r.displayName ?? "—"}</td>
+                            <td>{r.branch ? <span className="pill route">{r.branch}</span> : "—"}</td>
+                            <td><span className={"pill " + (r.status === "active" ? "active" : "blocked")}>{r.status}</span></td>
+                            <td>{new Date(r.registeredAt).toLocaleString("ja-JP")}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr><td colSpan={4} style={{ color: "var(--faint)" }}>この日の記録はありません。</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
         )}
 
