@@ -10,9 +10,8 @@ export interface Option<T extends string> {
 export const Q1_ASSETS: { title: string; options: Option<AssetBand>[] } = {
   title: "現在の金融資産は、どのくらいでしょうか。",
   options: [
-    { value: "over_500m", label: "5億円以上" },
-    { value: "m300_500m", label: "3億 〜 5億円" },
-    { value: "m100_300m", label: "1億 〜 3億円" },
+    { value: "over_300m", label: "3億円以上" },
+    { value: "m100_300m", label: "1億 〜 3億円未満" },
     { value: "under_100m", label: "1億円未満" },
   ],
 };
@@ -21,13 +20,13 @@ export const Q2_INCOME: { title: string; options: Option<IncomeBand>[] } = {
   title: "世帯年収は、どのくらいでしょうか。",
   options: [
     { value: "over_2000", label: "2,000万円以上" },
-    { value: "m800_1500", label: "800万 〜 1,500万円" },
-    { value: "under_800", label: "800万円未満" },
+    { value: "m1000_2000", label: "1,000万 〜 2,000万円未満" },
+    { value: "under_1000", label: "1,000万円未満" },
   ],
 };
 
 /**
- * Q3 — shown to consultation-eligible respondents (5億以上、または3〜5億かつ年収2,000万以上).
+ * Q3 — shown to consultation-eligible respondents (資産3億円以上 かつ 年収2,000万円以上).
  * Whether they want a free 1:1 consultation with ゆか姉 (the tax accountant).
  */
 export const Q3_CONSULT: { title: string; options: Option<ConsultWish>[] } = {
