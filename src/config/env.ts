@@ -45,7 +45,7 @@ export const serverEnv = {
   get consultBookingUrl() {
     return optional(
       "CONSULT_BOOKING_URL",
-      "https://app.spirinc.com/t/zrHOxA9DtsuHRyCGFk6cc/as/ShQiSQQH2n1XaY0qGc5nO/confirm"
+      "https://app.spirinc.com/t/CA8x8TEUZoG7HSWJoDQ_F/as/haWhhlLAM_ElNjtgX_WqW/confirm"
     );
   },
   /** School (マネトレ大学) conversion endpoints — unchanged */
