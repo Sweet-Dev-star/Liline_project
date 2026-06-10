@@ -3,6 +3,7 @@ import { prisma } from "@/src/lib/db";
 import { lineClient } from "@/src/lib/line/client";
 import { serverEnv } from "@/src/config/env";
 import { buildGreeting } from "@/src/features/messaging/greeting";
+import { conciergeReply } from "@/src/features/ai/concierge";
 
 // Diagnostic endpoint — guarded by CRON_SECRET so it isn't public.
 export const runtime = "nodejs";
@@ -104,6 +105,19 @@ export async function GET(req: Request) {
     } catch (e) {
       return NextResponse.json({ quota: "FAILED", error: (e as Error).message });
     }
+  }
+
+  // Test the AI concierge end-to-end (verifies ANTHROPIC_API_KEY + guardrails).
+  if (url.searchParams.get("check") === "ai") {
+    const q = url.searchParams.get("q") || "資産運用は何から始めればいいですか？";
+    const msgs = await conciergeReply(undefined, q);
+    const reply = msgs.map((m) => (m.type === "text" ? m.text : "[non-text]")).join("\n");
+    return NextResponse.json({
+      keySet: !!process.env.ANTHROPIC_API_KEY,
+      question: q,
+      reply,
+      live: !reply.includes("担当（ゆか姉）にて確認"), // false => fallback (AI not answering)
+    });
   }
 
   if (url.searchParams.get("check") === "env") {
