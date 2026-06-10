@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/db";
 import { serverEnv } from "@/src/config/env";
 import { resolveTarget } from "@/src/lib/track";
@@ -17,14 +16,16 @@ export async function GET(req: Request) {
   const dest = resolveTarget(target);
 
   // unknown target -> send to the site root rather than erroring on the user
-  if (!dest) {
-    return NextResponse.redirect(serverEnv.publicBaseUrl || "https://yukatax.netlify.app", 302);
-  }
+  const to = dest || serverEnv.publicBaseUrl || "https://yukatax.netlify.app";
 
   // best-effort click log (never block the redirect)
-  await prisma.eventLog
-    .create({ data: { type: `click_${target}`, payload: {} } })
-    .catch(() => undefined);
+  if (dest) {
+    await prisma.eventLog
+      .create({ data: { type: `click_${target}`, payload: {} } })
+      .catch(() => undefined);
+  }
 
-  return NextResponse.redirect(dest, 302);
+  // explicit Location so the destination URL is passed through verbatim
+  // (NextResponse.redirect was appending the inbound ?to= query).
+  return new Response(null, { status: 302, headers: { Location: to } });
 }
