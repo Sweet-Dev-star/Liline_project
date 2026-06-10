@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
   const [
     total, active, blocked, consultation, school, nurture, pending, sent, surveys,
-    clkConsult, clkSchool, clkMtu,
+    clkConsult, clkSchool, clkMtu, aiTotal,
     recentUsers, recentSurveys, recentClicks,
   ] = await Promise.all([
     prisma.user.count(),
@@ -33,6 +33,7 @@ export async function GET(req: Request) {
     prisma.eventLog.count({ where: { type: "click_consult" } }),
     prisma.eventLog.count({ where: { type: "click_school" } }),
     prisma.eventLog.count({ where: { type: "click_mtu" } }),
+    prisma.eventLog.count({ where: { type: "ai" } }),
     prisma.user.findMany({ where: { registeredAt: { gte: cutoff } }, select: { registeredAt: true } }),
     prisma.surveyResponse.findMany({ where: { createdAt: { gte: cutoff } }, select: { createdAt: true } }),
     prisma.eventLog.findMany({
@@ -59,7 +60,7 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({
-    stats: { total, active, blocked, consultation, school, nurture, pending, sent, surveys },
+    stats: { total, active, blocked, consultation, school, nurture, pending, sent, surveys, ai: aiTotal },
     clicks: { consult: clkConsult, school: clkSchool, mtu: clkMtu },
     daily,
     users: users.map((u) => ({

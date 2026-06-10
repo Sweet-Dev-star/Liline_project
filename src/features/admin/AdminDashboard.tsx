@@ -9,12 +9,12 @@ const TOKEN_KEY = "tsl_admin_token";
 interface Stats {
   total: number; active: number; blocked: number;
   consultation: number; school: number; nurture: number;
-  pending: number; sent: number; surveys: number;
+  pending: number; sent: number; surveys: number; ai: number;
 }
-interface DailyPoint { date: string; adds: number; surveys: number; clicks: number; }
+interface DailyPoint { date: string; adds: number; surveys: number; clicks: number; ai: number; }
 /** Funnel totals for a single selected date. */
 interface FunnelTotals {
-  adds: number; surveys: number; consultation: number; school: number; nurture: number;
+  adds: number; surveys: number; consultation: number; school: number; nurture: number; ai: number;
   clicks: { consult: number; school: number; mtu: number };
 }
 interface Row {
@@ -250,6 +250,7 @@ export function AdminDashboard() {
             <Stat label="スクール" value={stats.school} accent />
             <Stat label="非該当" value={stats.nurture} accent />
             <Stat label="回答数" value={stats.surveys} />
+            <Stat label="AI応答" value={stats.ai} />
             <Stat label="配信予約" value={stats.pending} />
             <Stat label="配信済み" value={stats.sent} />
           </div>
@@ -280,6 +281,7 @@ export function AdminDashboard() {
                   <FunnelRow label="育成（Nurture）" value={f.nurture} prev={f.surveys} max={fmax} indent />
                   <FunnelRow label="相談リンク クリック" value={f.clicks.consult} prev={f.consultation} max={fmax} accent />
                   <FunnelRow label="マネトレ リンク クリック" value={f.clicks.school + f.clicks.mtu} prev={f.school} max={fmax} accent />
+                  <p className="funnel-note">この日のAI応答：<b>{f.ai}</b> 件</p>
                 </div>
               );
             })()}
@@ -297,6 +299,7 @@ export function AdminDashboard() {
               <span><i className="lg lg-adds" />友だち追加</span>
               <span><i className="lg lg-surveys" />アンケート</span>
               <span><i className="lg lg-clicks" />クリック</span>
+              <span><i className="lg lg-ai" />AI応答</span>
             </div>
           </div>
         )}
@@ -413,15 +416,20 @@ function FunnelRow({
 }
 
 function DailyChart({ data }: { data: DailyPoint[] }) {
-  const max = Math.max(1, ...data.map((d) => Math.max(d.adds, d.surveys, d.clicks)));
+  const max = Math.max(1, ...data.map((d) => Math.max(d.adds, d.surveys, d.clicks, d.ai)));
   return (
     <div className="daily">
       {data.map((d) => (
-        <div className="day" key={d.date} title={`${d.date}｜追加 ${d.adds} / 回答 ${d.surveys} / クリック ${d.clicks}`}>
+        <div
+          className="day"
+          key={d.date}
+          title={`${d.date}｜追加 ${d.adds} / 回答 ${d.surveys} / クリック ${d.clicks} / AI ${d.ai}`}
+        >
           <div className="day-bars">
             <i className="db db-adds" style={{ height: `${(d.adds / max) * 100}%` }} />
             <i className="db db-surveys" style={{ height: `${(d.surveys / max) * 100}%` }} />
             <i className="db db-clicks" style={{ height: `${(d.clicks / max) * 100}%` }} />
+            <i className="db db-ai" style={{ height: `${(d.ai / max) * 100}%` }} />
           </div>
           <span className="day-label">{d.date.slice(5).replace("-", "/")}</span>
         </div>

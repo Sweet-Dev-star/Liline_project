@@ -34,7 +34,7 @@ export async function GET(req: Request) {
   const startUtc = new Date(`${from}T00:00:00.000${JST}`);
   const endUtc = new Date(`${to}T23:59:59.999${JST}`);
 
-  const [adds, surveys, clicks] = await Promise.all([
+  const [adds, surveys, clicks, aiEvents] = await Promise.all([
     prisma.user.findMany({
       where: { registeredAt: { gte: startUtc, lte: endUtc } },
       select: { id: true, displayName: true, branch: true, status: true, registeredAt: true },
@@ -51,6 +51,11 @@ export async function GET(req: Request) {
       select: { type: true, createdAt: true },
       take: 5000,
     }),
+    prisma.eventLog.findMany({
+      where: { type: "ai", createdAt: { gte: startUtc, lte: endUtc } },
+      select: { createdAt: true },
+      take: 5000,
+    }),
   ]);
 
   // build the inclusive day list (cap protects against accidental huge ranges)
@@ -60,11 +65,12 @@ export async function GET(req: Request) {
     days.push(cur);
     cur = jstDay(new Date(new Date(`${cur}T00:00:00${JST}`).getTime() + 86400000));
   }
-  const map: Record<string, { date: string; adds: number; surveys: number; clicks: number }> = {};
-  for (const d of days) map[d] = { date: d, adds: 0, surveys: 0, clicks: 0 };
+  const map: Record<string, { date: string; adds: number; surveys: number; clicks: number; ai: number }> = {};
+  for (const d of days) map[d] = { date: d, adds: 0, surveys: 0, clicks: 0, ai: 0 };
   for (const u of adds) { const k = jstDay(u.registeredAt); if (map[k]) map[k].adds++; }
   for (const s of surveys) { const k = jstDay(s.createdAt); if (map[k]) map[k].surveys++; }
   for (const c of clicks) { const k = jstDay(c.createdAt); if (map[k]) map[k].clicks++; }
+  for (const a of aiEvents) { const k = jstDay(a.createdAt); if (map[k]) map[k].ai++; }
   const daily = days.map((d) => map[d]);
 
   return NextResponse.json({
@@ -77,6 +83,7 @@ export async function GET(req: Request) {
       consultation: surveys.filter((s) => s.branch === "consultation").length,
       school: surveys.filter((s) => s.branch === "school").length,
       nurture: surveys.filter((s) => s.branch === "nurture").length,
+      ai: aiEvents.length,
       clicks: {
         consult: clicks.filter((c) => c.type === "click_consult").length,
         school: clicks.filter((c) => c.type === "click_school").length,
