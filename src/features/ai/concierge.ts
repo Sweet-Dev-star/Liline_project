@@ -4,7 +4,7 @@ import { serverEnv } from "@/src/config/env";
 
 type Message = messagingApi.Message;
 
-const MODEL = "claude-haiku-4-5"; // fast + cost-efficient for a concierge
+const MODEL = "gpt-4o-mini"; // fast + cost-efficient for a concierge
 const MAX_TOKENS = 400;
 const MAX_INPUT = 500; // truncate user input (cost guard)
 const DAILY_CAP = 20; // per-user AI replies per JST day (cost/abuse guard)
@@ -64,7 +64,7 @@ export async function conciergeReply(userId: string | undefined, userText: strin
     }
   }
 
-  const answer = await askAnthropic(userText.slice(0, MAX_INPUT));
+  const answer = await askOpenAI(userText.slice(0, MAX_INPUT));
 
   // log the interaction (best-effort) — also feeds usage analytics
   await prisma.eventLog
@@ -74,34 +74,28 @@ export async function conciergeReply(userId: string | undefined, userText: strin
   return answer ? [{ type: "text", text: answer }] : [FALLBACK];
 }
 
-async function askAnthropic(userText: string): Promise<string | null> {
-  const key = serverEnv.anthropicApiKey;
+async function askOpenAI(userText: string): Promise<string | null> {
+  const key = serverEnv.openaiApiKey;
   if (!key || !userText.trim()) return null;
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_TOKENS,
-        system: SYSTEM,
-        messages: [{ role: "user", content: userText }],
+        messages: [
+          { role: "system", content: SYSTEM },
+          { role: "user", content: userText },
+        ],
       }),
     });
     if (!res.ok) {
-      console.error("[ai] anthropic error:", res.status, await res.text().catch(() => ""));
+      console.error("[ai] openai error:", res.status, await res.text().catch(() => ""));
       return null;
     }
-    const data = (await res.json()) as { content?: Array<{ type: string; text?: string }> };
-    const text = (data.content ?? [])
-      .filter((b) => b.type === "text" && b.text)
-      .map((b) => b.text as string)
-      .join("\n")
-      .trim();
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const text = data.choices?.[0]?.message?.content?.trim() ?? "";
     return text || null;
   } catch (e) {
     console.error("[ai] call failed:", (e as Error).message);

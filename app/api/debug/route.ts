@@ -106,23 +106,23 @@ export async function GET(req: Request) {
     }
   }
 
-  // Raw Anthropic call to surface the EXACT error (key/model/billing/etc.).
+  // Raw OpenAI call to surface the EXACT error (key/model/billing/etc.).
   if (url.searchParams.get("check") === "ai") {
-    const key = process.env.ANTHROPIC_API_KEY ?? "";
+    const key = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || "";
     const q = url.searchParams.get("q") || "資産運用は何から始めればいいですか？";
-    const model = url.searchParams.get("model") || "claude-haiku-4-5";
+    const model = url.searchParams.get("model") || "gpt-4o-mini";
     if (!key) return NextResponse.json({ keySet: false });
     try {
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
+      const r = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
-        headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
         body: JSON.stringify({ model, max_tokens: 300, messages: [{ role: "user", content: q }] }),
       });
       const bodyText = await r.text();
       let reply = "";
       try {
-        const d = JSON.parse(bodyText) as { content?: Array<{ type: string; text?: string }> };
-        reply = (d.content ?? []).filter((b) => b.type === "text").map((b) => b.text ?? "").join("\n");
+        const d = JSON.parse(bodyText) as { choices?: Array<{ message?: { content?: string } }> };
+        reply = d.choices?.[0]?.message?.content ?? "";
       } catch {
         /* not json */
       }

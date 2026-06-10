@@ -35,9 +35,10 @@ export const serverEnv = {
   get cronSecret() {
     return optional("CRON_SECRET");
   },
-  /** Anthropic API key for the AI concierge (optional — empty = AI disabled). */
-  get anthropicApiKey() {
-    return optional("ANTHROPIC_API_KEY");
+  /** OpenAI API key for the AI concierge (optional — empty = AI disabled).
+   *  Falls back to the ANTHROPIC_API_KEY slot so an existing key keeps working. */
+  get openaiApiKey() {
+    return optional("OPENAI_API_KEY") || optional("ANTHROPIC_API_KEY");
   },
   /** ゆか姉's scheduling tool (Spir) link, sent to qualified consultation leads.
    *  Defaults to the live Spir link; CONSULT_BOOKING_URL env overrides if set. */
