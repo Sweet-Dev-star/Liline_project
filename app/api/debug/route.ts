@@ -3,6 +3,7 @@ import { prisma } from "@/src/lib/db";
 import { lineClient } from "@/src/lib/line/client";
 import { serverEnv } from "@/src/config/env";
 import { buildGreeting } from "@/src/features/messaging/greeting";
+import { conciergeReply } from "@/src/features/ai/concierge";
 
 // Diagnostic endpoint — guarded by CRON_SECRET so it isn't public.
 export const runtime = "nodejs";
@@ -112,38 +113,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ clearedAiEvents: r.count });
   }
 
-  // Raw OpenAI call to surface the EXACT error (key/model/billing/etc.).
+  // Test the AI concierge through the REAL guarded path (system prompt + guardrails).
   if (url.searchParams.get("check") === "ai") {
-    const key = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || "";
     const q = url.searchParams.get("q") || "資産運用は何から始めればいいですか？";
-    const model = url.searchParams.get("model") || "gpt-4o-mini";
-    if (!key) return NextResponse.json({ keySet: false });
-    try {
-      const r = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-        body: JSON.stringify({ model, max_tokens: 300, messages: [{ role: "user", content: q }] }),
-      });
-      const bodyText = await r.text();
-      let reply = "";
-      try {
-        const d = JSON.parse(bodyText) as { choices?: Array<{ message?: { content?: string } }> };
-        reply = d.choices?.[0]?.message?.content ?? "";
-      } catch {
-        /* not json */
-      }
-      return NextResponse.json({
-        keySet: true,
-        keyFingerprint: `len=${key.length} ${key.slice(0, 8)}…`,
-        model,
-        status: r.status,
-        ok: r.ok,
-        reply: r.ok ? reply : undefined,
-        error: r.ok ? undefined : bodyText.slice(0, 600),
-      });
-    } catch (e) {
-      return NextResponse.json({ keySet: true, error: (e as Error).message });
-    }
+    const msgs = await conciergeReply(undefined, q);
+    const reply = msgs.map((m) => (m.type === "text" ? m.text : "[non-text]")).join("\n");
+    return NextResponse.json({ keySet: !!process.env.OPENAI_API_KEY || !!process.env.ANTHROPIC_API_KEY, question: q, reply });
   }
 
   if (url.searchParams.get("check") === "env") {
