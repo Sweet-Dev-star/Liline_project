@@ -65,13 +65,14 @@ export async function conciergeReply(userId: string | undefined, userText: strin
   }
 
   const answer = await askOpenAI(userText.slice(0, MAX_INPUT));
+  if (!answer) return [FALLBACK]; // AI unavailable/errored — don't count it
 
-  // log the interaction (best-effort) — also feeds usage analytics
+  // log only SUCCESSFUL AI replies (this is the "AI応答" analytics metric)
   await prisma.eventLog
     .create({ data: { type: "ai", userId: userId ?? null, payload: {} } })
     .catch(() => undefined);
 
-  return answer ? [{ type: "text", text: answer }] : [FALLBACK];
+  return [{ type: "text", text: answer }];
 }
 
 async function askOpenAI(userText: string): Promise<string | null> {

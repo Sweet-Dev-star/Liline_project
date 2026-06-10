@@ -106,6 +106,12 @@ export async function GET(req: Request) {
     }
   }
 
+  // One-off: clear historical AI test events so the counter starts clean.
+  if (url.searchParams.get("reset") === "ai") {
+    const r = await prisma.eventLog.deleteMany({ where: { type: "ai" } });
+    return NextResponse.json({ clearedAiEvents: r.count });
+  }
+
   // Raw OpenAI call to surface the EXACT error (key/model/billing/etc.).
   if (url.searchParams.get("check") === "ai") {
     const key = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || "";
