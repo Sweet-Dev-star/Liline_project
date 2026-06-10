@@ -6,8 +6,9 @@ import { serverEnv } from "@/src/config/env";
  * and set it as the default for all users. Idempotent-ish: deletes existing
  * menus first so re-running replaces rather than piling up.
  *
- * Layout (2500x843, three equal columns):
- *   [ FAQ ] [ ABOUT ] [ CONTACT ]  -> each sends a postback handled in the webhook
+ * Layout (2500x843, four equal columns of 625px):
+ *   [ FAQ ] [ ABOUT ] [ CONTACT ] [ AI CHAT ]
+ *   FAQ/ABOUT/CONTACT -> web pages (uri); AI CHAT -> postback (menu=ai).
  */
 export async function setupRichMenu(): Promise<{ richMenuId: string }> {
   const client = lineClient();
@@ -30,19 +31,24 @@ export async function setupRichMenu(): Promise<{ richMenuId: string }> {
       chatBarText: "メニュー",
       areas: [
         {
-          // left = FAQ -> /faq page
-          bounds: { x: 0, y: 0, width: 833, height: 843 },
+          // FAQ -> /faq page
+          bounds: { x: 0, y: 0, width: 625, height: 843 },
           action: { type: "uri", label: "FAQ", uri: `${base}/faq` },
         },
         {
-          // middle = ABOUT -> /about page
-          bounds: { x: 833, y: 0, width: 834, height: 843 },
+          // ABOUT -> /about page
+          bounds: { x: 625, y: 0, width: 625, height: 843 },
           action: { type: "uri", label: "ABOUT", uri: `${base}/about` },
         },
         {
-          // right = CONTACT -> /contact page
-          bounds: { x: 1667, y: 0, width: 833, height: 843 },
+          // CONTACT -> /contact page
+          bounds: { x: 1250, y: 0, width: 625, height: 843 },
           action: { type: "uri", label: "CONTACT", uri: `${base}/contact` },
+        },
+        {
+          // AI CHAT -> postback (handled in the webhook -> AI concierge intro)
+          bounds: { x: 1875, y: 0, width: 625, height: 843 },
+          action: { type: "postback", label: "AI CHAT", data: "menu=ai", displayText: "AIに相談する" },
         },
       ],
     })
