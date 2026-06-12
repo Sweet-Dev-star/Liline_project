@@ -11,7 +11,7 @@ interface Stats {
   consultation: number; school: number; nurture: number;
   pending: number; sent: number; surveys: number; ai: number;
 }
-interface DailyPoint { date: string; adds: number; surveys: number; clicks: number; ai: number; }
+interface SeriesPoint { label: string; adds: number; surveys: number; clicks: number; ai: number; }
 /** Funnel totals for a single selected date. */
 interface FunnelTotals {
   adds: number; surveys: number; consultation: number; school: number; nurture: number; ai: number;
@@ -26,7 +26,8 @@ export function AdminDashboard() {
   const [token, setToken] = useState("");
   const [authed, setAuthed] = useState(false);
   const [stats, setStats] = useState<Stats>();
-  const [daily, setDaily] = useState<DailyPoint[]>([]);
+  const [series, setSeries] = useState<SeriesPoint[]>([]);
+  const [granularity, setGranularity] = useState("day");
   const [rangeFrom, setRangeFrom] = useState("");
   const [rangeTo, setRangeTo] = useState("");
   const [funnelDate, setFunnelDate] = useState("");
@@ -47,7 +48,11 @@ export function AdminDashboard() {
       const res = await fetch(`/api/admin/analytics?from=${from}&to=${to}`, {
         headers: { Authorization: `Bearer ${t}` },
       });
-      if (res.ok) setDaily((await res.json()).daily ?? []);
+      if (res.ok) {
+        const d = await res.json();
+        setSeries(d.series ?? []);
+        setGranularity(d.granularity ?? "day");
+      }
     } catch {
       /* ignore */
     }
@@ -286,7 +291,10 @@ export function AdminDashboard() {
               );
             })()}
 
-            <h3 className="adm-h3">期間別の推移（下のグラフ専用）</h3>
+            <h3 className="adm-h3">
+              期間別の推移
+              <span className="gran-badge">{granularity === "month" ? "月次" : granularity === "week" ? "週次" : "日次"}</span>
+            </h3>
             <div className="adm-daterange">
               <span className="adm-date-label">開始</span>
               <DatePicker value={rangeFrom} max={todayJst} onChange={onFromChange} />
@@ -294,7 +302,7 @@ export function AdminDashboard() {
               <span className="adm-date-label">終了</span>
               <DatePicker value={rangeTo} min={rangeFrom} max={todayJst} onChange={onToChange} />
             </div>
-            <DailyChart data={daily} />
+            <TrendChart points={series} />
             <div className="daily-legend">
               <span><i className="lg lg-adds" />友だち追加</span>
               <span><i className="lg lg-surveys" />アンケート</span>
@@ -415,23 +423,25 @@ function FunnelRow({
   );
 }
 
-function DailyChart({ data }: { data: DailyPoint[] }) {
-  const max = Math.max(1, ...data.map((d) => Math.max(d.adds, d.surveys, d.clicks, d.ai)));
+function TrendChart({ points }: { points: SeriesPoint[] }) {
+  const max = Math.max(1, ...points.map((p) => Math.max(p.adds, p.surveys, p.clicks, p.ai)));
+  // show at most ~12 labels so they never crowd/overflow, regardless of range size
+  const step = Math.max(1, Math.ceil(points.length / 12));
   return (
     <div className="daily">
-      {data.map((d) => (
+      {points.map((p, i) => (
         <div
           className="day"
-          key={d.date}
-          title={`${d.date}｜追加 ${d.adds} / 回答 ${d.surveys} / クリック ${d.clicks} / AI ${d.ai}`}
+          key={i}
+          title={`${p.label}｜追加 ${p.adds} / 回答 ${p.surveys} / クリック ${p.clicks} / AI ${p.ai}`}
         >
           <div className="day-bars">
-            <i className="db db-adds" style={{ height: `${(d.adds / max) * 100}%` }} />
-            <i className="db db-surveys" style={{ height: `${(d.surveys / max) * 100}%` }} />
-            <i className="db db-clicks" style={{ height: `${(d.clicks / max) * 100}%` }} />
-            <i className="db db-ai" style={{ height: `${(d.ai / max) * 100}%` }} />
+            <i className="db db-adds" style={{ height: `${(p.adds / max) * 100}%` }} />
+            <i className="db db-surveys" style={{ height: `${(p.surveys / max) * 100}%` }} />
+            <i className="db db-clicks" style={{ height: `${(p.clicks / max) * 100}%` }} />
+            <i className="db db-ai" style={{ height: `${(p.ai / max) * 100}%` }} />
           </div>
-          <span className="day-label">{d.date.slice(5).replace("-", "/")}</span>
+          <span className="day-label">{i % step === 0 ? p.label : ""}</span>
         </div>
       ))}
     </div>

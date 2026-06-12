@@ -9,6 +9,40 @@ const JST = "+09:00";
 const isYmd = (s: string | null): s is string => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 const jstDay = (d: Date) => new Date(d.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
+type DayPoint = { date: string; adds: number; surveys: number; clicks: number; ai: number };
+type SeriesPoint = { label: string; adds: number; surveys: number; clicks: number; ai: number };
+
+/** Roll daily points up into the chosen granularity so the chart stays compact. */
+function bucketize(daily: DayPoint[], g: "day" | "week" | "month"): SeriesPoint[] {
+  const mmdd = (d: string) => `${+d.slice(5, 7)}/${+d.slice(8, 10)}`;
+  const blank = (label: string): SeriesPoint => ({ label, adds: 0, surveys: 0, clicks: 0, ai: 0 });
+  const add = (acc: SeriesPoint, p: DayPoint) => {
+    acc.adds += p.adds; acc.surveys += p.surveys; acc.clicks += p.clicks; acc.ai += p.ai;
+  };
+
+  if (g === "day") {
+    return daily.map((p) => ({ label: mmdd(p.date), adds: p.adds, surveys: p.surveys, clicks: p.clicks, ai: p.ai }));
+  }
+  if (g === "week") {
+    const out: SeriesPoint[] = [];
+    for (let i = 0; i < daily.length; i += 7) {
+      const chunk = daily.slice(i, i + 7);
+      const acc = blank(mmdd(chunk[0]!.date)); // week starting M/D
+      chunk.forEach((p) => add(acc, p));
+      out.push(acc);
+    }
+    return out;
+  }
+  // month
+  const byMonth = new Map<string, SeriesPoint>();
+  for (const p of daily) {
+    const key = p.date.slice(0, 7); // YYYY-MM
+    if (!byMonth.has(key)) byMonth.set(key, blank(`${+key.slice(5, 7)}月`));
+    add(byMonth.get(key)!, p);
+  }
+  return [...byMonth.values()];
+}
+
 /**
  * Range analytics for any [from, to] (JST dates, inclusive). Bearer-guarded.
  * GET /api/admin/analytics?from=YYYY-MM-DD&to=YYYY-MM-DD
@@ -61,7 +95,7 @@ export async function GET(req: Request) {
   // build the inclusive day list (cap protects against accidental huge ranges)
   const days: string[] = [];
   let cur = from;
-  while (cur <= to && days.length <= 120) {
+  while (cur <= to && days.length <= 370) {
     days.push(cur);
     cur = jstDay(new Date(new Date(`${cur}T00:00:00${JST}`).getTime() + 86400000));
   }
@@ -73,9 +107,17 @@ export async function GET(req: Request) {
   for (const a of aiEvents) { const k = jstDay(a.createdAt); if (map[k]) map[k].ai++; }
   const daily = days.map((d) => map[d]);
 
+  // ADAPTIVE GRANULARITY: keep the chart point-count bounded so it never needs
+  // horizontal scroll — daily (≤31d), weekly (≤92d), else monthly.
+  const granularity: "day" | "week" | "month" =
+    daily.length <= 31 ? "day" : daily.length <= 92 ? "week" : "month";
+  const series = bucketize(daily, granularity);
+
   return NextResponse.json({
     from,
     to,
+    granularity,
+    series,
     daily,
     totals: {
       adds: adds.length,

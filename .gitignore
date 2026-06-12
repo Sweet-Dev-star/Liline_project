@@ -9,3 +9,7 @@ build/
 .vercel
 next-env.d.ts
 _assets_backup/
+# local archives / generated artifacts (never commit)
+*.zip
+*.docx
+report_build/
