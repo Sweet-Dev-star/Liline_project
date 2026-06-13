@@ -241,24 +241,42 @@ export function AdminDashboard() {
   return (
     <div className="adm">
       <div className="adm-bar">
-        <span className="b">TAX STRATEGY LAB</span>
+        <div className="adm-brand">
+          <span className="b">TAX STRATEGY LAB</span>
+          <span className="s">管理ダッシュボード</span>
+        </div>
         <button className="adm-logout" onClick={logout}>ログアウト</button>
       </div>
 
       <div className="adm-main">
         {stats && (
-          <div className="adm-stats">
-            <Stat label="友だち総数" value={stats.total} />
-            <Stat label="アクティブ" value={stats.active} />
-            <Stat label="ブロック" value={stats.blocked} />
-            <Stat label="個別相談" value={stats.consultation} accent />
-            <Stat label="スクール" value={stats.school} accent />
-            <Stat label="非該当" value={stats.nurture} accent />
-            <Stat label="回答数" value={stats.surveys} />
-            <Stat label="AI応答" value={stats.ai} />
-            <Stat label="配信予約" value={stats.pending} />
-            <Stat label="配信済み" value={stats.sent} />
-          </div>
+          <>
+            <div className="adm-section">
+              <p className="adm-section-h">友だち</p>
+              <div className="adm-stats">
+                <Stat label="総数" value={stats.total} />
+                <Stat label="アクティブ" value={stats.active} />
+                <Stat label="ブロック" value={stats.blocked} />
+              </div>
+            </div>
+            <div className="adm-section">
+              <p className="adm-section-h">診断・分岐</p>
+              <div className="adm-stats">
+                <Stat label="回答数" value={stats.surveys} />
+                <Stat label="個別相談" value={stats.consultation} accent />
+                <Stat label="スクール" value={stats.school} accent />
+                <Stat label="非該当" value={stats.nurture} accent />
+              </div>
+            </div>
+            <div className="adm-section">
+              <p className="adm-section-h">配信・AI</p>
+              <div className="adm-stats">
+                <Stat label="配信予約" value={stats.pending} />
+                <Stat label="配信済み" value={stats.sent} />
+                <Stat label="AI応答" value={stats.ai} />
+              </div>
+            </div>
+          </>
         )}
 
         {funnelData && (
