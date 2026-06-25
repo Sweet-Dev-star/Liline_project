@@ -19,16 +19,21 @@ Live: **https://yukatax.netlify.app**
 - PUBLIC_BASE_URL=https://yukatax.netlify.app
 - DRIP_TEST_MODE=0      (production: 翌日/翌々日/3日後 @20:00 JST)
 
-## Drip cron (Netlify has no Vercel-style cron)
-An EXTERNAL cron must ping the dispatcher every minute:
+## Drip cron
+The Netlify Scheduled Function `netlify/functions/drip-cron.ts` handles this
+natively — it runs every 15 minutes and pings the dispatcher. No external cron
+is required.
+
+⚠️ Do NOT also run an external per-minute cron against the dispatcher. Polling
+the DB every minute keeps Neon's free-tier compute awake 24/7 and exhausts the
+monthly compute quota (the DB then returns "exceeded compute time quota" errors).
+If you previously set up an external cron (e.g. cron-job.org) hitting:
 
   URL    : https://yukatax.netlify.app/api/cron/dispatch
-  Method : GET (or POST)
-  Header : Authorization: Bearer <CRON_SECRET>
-           (or query: ?secret=<CRON_SECRET>)
-  Every  : 1 minute
+  Header : Authorization: Bearer <CRON_SECRET>  (or query: ?secret=<CRON_SECRET>)
 
-Recommended: https://cron-job.org (free).
+…then either DELETE it or set its interval to 15 minutes, so it doesn't fight
+the Netlify schedule and re-exhaust the quota.
 
 ## Notes
 - vercel.json is vestigial (Netlify uses @netlify/plugin-nextjs). Cron lives in cron-job.org, not vercel.json.
