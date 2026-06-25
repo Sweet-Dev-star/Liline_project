@@ -1,0 +1,242 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/src/lib/db";
+import { lineClient } from "@/src/lib/line/client";
+import { serverEnv } from "@/src/config/env";
+import { buildGreeting } from "@/src/features/messaging/greeting";
+import { conciergeReply } from "@/src/features/ai/concierge";
+
+// Diagnostic endpoint — guarded by CRON_SECRET so it isn't public.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+
+  // auth: require ?secret=<CRON_SECRET> (reuse the existing secret)
+  const secret = serverEnv.cronSecret;
+  if (secret && url.searchParams.get("secret") !== secret) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  if (url.searchParams.get("check") === "line") {
+    const tok = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "";
+    const fp = tok ? `len=${tok.length} ${tok.slice(0, 4)}...${tok.slice(-4)}` : "(empty)";
+    try {
+      const info = await lineClient().getBotInfo();
+      return NextResponse.json({
+        lineToken: "ok",
+        fingerprint: fp,
+        basicId: info.basicId, // the @xxxx ID — MUST match the OA you added as a friend
+        displayName: info.displayName,
+        chatMode: info.chatMode, // "chat" = Chat mode ON (intercepts replies!) | "bot" = OK
+        markAsReadMode: info.markAsReadMode,
+      });
+    } catch (e) {
+      return NextResponse.json({ lineToken: "FAILED", fingerprint: fp, error: (e as Error).message });
+    }
+  }
+
+  // Probe the Neon/Postgres database and report the EXACT failure + likely cause,
+  // so DB problems can be diagnosed from the HTTP response without log digging.
+  if (url.searchParams.get("check") === "db") {
+    // Inspect the connection string WITHOUT leaking the secret: only host + flags.
+    const raw = process.env.DATABASE_URL ?? "";
+    let host = "(unset)";
+    let pooled = false;
+    let sslmode = "(none)";
+    if (raw) {
+      try {
+        const u = new URL(raw);
+        host = u.hostname;
+        pooled = u.hostname.includes("-pooler") || u.searchParams.get("pgbouncer") === "true";
+        sslmode = u.searchParams.get("sslmode") ?? "(none)";
+      } catch {
+        host = "(unparseable DATABASE_URL)";
+      }
+    }
+
+    const t0 = Date.now();
+    try {
+      // 1) raw connectivity — catches cold-start/unreachable/too-many-connections
+      await prisma.$queryRaw`SELECT 1`;
+      // 2) schema presence — catches "table does not exist" (db push never ran)
+      const userCount = await prisma.user.count();
+      return NextResponse.json({
+        db: "OK",
+        host,
+        pooled, // should be true on Netlify (Neon pooled connection)
+        sslmode,
+        latencyMs: Date.now() - t0,
+        userCount,
+      });
+    } catch (e) {
+      const msg = (e as Error).message || String(e);
+      const code = (e as { code?: string }).code; // Prisma error code (P1001, P2021, ...)
+      // classify the most common Neon failure modes
+      let cause = "unknown";
+      let hint = "Netlify の Functions ログで全文を確認してください。";
+      if (/does not exist|P2021|relation .* does not exist/i.test(msg) || code === "P2021") {
+        cause = "table_missing";
+        hint = "テーブル未作成。direct(非pooled)接続文字列で `npx prisma db push` を実行してください。";
+      } else if (/Can't reach database server|P1001|ECONNREFUSED|ETIMEDOUT|timeout/i.test(msg) || code === "P1001") {
+        cause = "unreachable_or_cold_start";
+        hint = "Neon がスリープ/停止、または接続不可。Neon ダッシュボードでプロジェクトが Active か、DATABASE_URL のホストが正しいか確認してください。";
+      } else if (/too many connections|remaining connection slots/i.test(msg)) {
+        cause = "connection_exhausted";
+        hint = "direct 接続を使っている可能性。Neon の pooled(-pooler)接続文字列に切り替えてください。";
+      } else if (/password authentication failed|P1000/i.test(msg) || code === "P1000") {
+        cause = "auth_failed";
+        hint = "ユーザー名/パスワードが不正。Neon で接続文字列を再発行してください。";
+      } else if (/database .* does not exist|P1003/i.test(msg) || code === "P1003") {
+        cause = "database_missing";
+        hint = "DB/ブランチが削除されています。Neon で再作成し DATABASE_URL を更新してください。";
+      }
+      return NextResponse.json({
+        db: "FAILED",
+        host,
+        pooled,
+        sslmode,
+        latencyMs: Date.now() - t0,
+        cause,
+        hint,
+        code: code ?? null,
+        error: msg,
+      });
+    }
+  }
+
+  // Show the most recent inbound webhook events (durably logged). Send "menu"
+  // from the phone, then open this: if a fresh "message" event appears, real
+  // messages ARE reaching the handler -> the reply side is the problem.
+  if (url.searchParams.get("check") === "events") {
+    const rows = await prisma.eventLog.findMany({ orderBy: { createdAt: "desc" }, take: 15 });
+    const now = Date.now();
+    return NextResponse.json({
+      count: rows.length,
+      events: rows.map((r) => ({
+        type: r.type,
+        userId: r.userId,
+        at: r.createdAt,
+        secondsAgo: Math.round((now - r.createdAt.getTime()) / 1000),
+      })),
+    });
+  }
+
+  // Ask LINE directly: what is the webhook URL set to, is it active, and can
+  // LINE reach it right now? This is the truth source for "menu got no reply".
+  if (url.searchParams.get("check") === "webhook") {
+    const tok = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "";
+    const headers = { Authorization: `Bearer ${tok}` };
+    try {
+      const epRes = await fetch("https://api.line.me/v2/bot/channel/webhook/endpoint", { headers });
+      const endpoint = await epRes.json(); // { endpoint, active }
+      const testRes = await fetch("https://api.line.me/v2/bot/channel/webhook/test", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+      });
+      const test = await testRes.json(); // { success, statusCode, reason, detail, timestamp }
+      const expected = (process.env.PUBLIC_BASE_URL ?? "https://yukatax.netlify.app") + "/api/webhook";
+      return NextResponse.json({
+        configuredEndpoint: endpoint?.endpoint ?? "(none)",
+        active: endpoint?.active ?? null,
+        expectedEndpoint: expected,
+        urlMatches: endpoint?.endpoint === expected,
+        reachTest: test,
+      });
+    } catch (e) {
+      return NextResponse.json({ webhook: "FAILED", error: (e as Error).message });
+    }
+  }
+
+  // Check the LINE monthly message quota. Free plan = 200 PUSH msgs/month.
+  // If consumption >= quota, all push/multicast (drips, branch cards) silently drop.
+  if (url.searchParams.get("check") === "quota") {
+    const tok = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "";
+    const headers = { Authorization: `Bearer ${tok}` };
+    try {
+      const [qRes, cRes] = await Promise.all([
+        fetch("https://api.line.me/v2/bot/message/quota", { headers }),
+        fetch("https://api.line.me/v2/bot/message/quota/consumption", { headers }),
+      ]);
+      const quota = await qRes.json();
+      const consumption = await cRes.json();
+      const limit = quota?.value ?? null;
+      const used = consumption?.totalUsage ?? null;
+      const exhausted =
+        quota?.type === "limited" && limit != null && used != null && used >= limit;
+      return NextResponse.json({
+        plan: quota?.type, // "none" = unlimited (paid), "limited" = capped (free)
+        limit,
+        used,
+        remaining: limit != null && used != null ? limit - used : null,
+        exhausted,
+      });
+    } catch (e) {
+      return NextResponse.json({ quota: "FAILED", error: (e as Error).message });
+    }
+  }
+
+  // One-off: clear historical AI test events so the counter starts clean.
+  if (url.searchParams.get("reset") === "ai") {
+    const r = await prisma.eventLog.deleteMany({ where: { type: "ai" } });
+    return NextResponse.json({ clearedAiEvents: r.count });
+  }
+
+  // Test the AI concierge through the REAL guarded path (system prompt + guardrails).
+  if (url.searchParams.get("check") === "ai") {
+    const q = url.searchParams.get("q") || "資産運用は何から始めればいいですか？";
+    const msgs = await conciergeReply(undefined, q);
+    const reply = msgs.map((m) => (m.type === "text" ? m.text : "[non-text]")).join("\n");
+    return NextResponse.json({ keySet: !!process.env.OPENAI_API_KEY || !!process.env.ANTHROPIC_API_KEY, question: q, reply });
+  }
+
+  if (url.searchParams.get("check") === "env") {
+    return NextResponse.json({
+      mainVideo: process.env.NEXT_PUBLIC_MAIN_VIDEO_URL ?? "(unset)",
+      schoolVideo: process.env.NEXT_PUBLIC_SCHOOL_VIDEO_URL ?? "(unset)",
+      publicBaseUrl: process.env.PUBLIC_BASE_URL ?? "(unset)",
+      consultBooking: serverEnv.consultBookingUrl || "(unset)", // resolved (env or code default)
+      schoolLink: process.env.SCHOOL_LINK_URL ?? "(unset)",
+      schoolSite: process.env.SCHOOL_SITE_URL ?? "(unset)",
+      liffId: process.env.NEXT_PUBLIC_LIFF_ID ?? "(unset)",
+      dripTestMode: process.env.DRIP_TEST_MODE === "1",
+      dripSchedule:
+        process.env.DRIP_TEST_MODE === "1"
+          ? "TEST: +10/20/30 sec"
+          : "PRODUCTION: day 1/2/3 @ 20:00 JST",
+    });
+  }
+
+  // Push the greeting card to the most recent user (or ?to=<userId>) and
+  // surface the EXACT LINE API error in the HTTP response — no log digging.
+  if (url.searchParams.get("check") === "greeting") {
+    const to =
+      url.searchParams.get("to") ??
+      (await prisma.user.findFirst({ orderBy: { registeredAt: "desc" } }))?.id;
+    if (!to) return NextResponse.json({ error: "no user to send to" }, { status: 404 });
+
+    const messages = buildGreeting(null);
+    try {
+      await lineClient().pushMessage({ to, messages });
+      return NextResponse.json({ greeting: "SENT", to, liffUri: (messages[0] as { contents?: { footer?: { contents?: Array<{ action?: { uri?: string } }> } } }).contents?.footer?.contents?.[0]?.action?.uri });
+    } catch (e) {
+      const err = e as { originalError?: { response?: { data?: unknown } }; statusCode?: number };
+      return NextResponse.json(
+        {
+          greeting: "FAILED",
+          to,
+          statusCode: err.statusCode,
+          lineError: err.originalError?.response?.data ?? (e as Error).message,
+        },
+        { status: 200 }
+      );
+    }
+  }
+
+  const users = await prisma.user.findMany({
+    orderBy: { registeredAt: "desc" },
+    include: { tags: true, surveys: true, scheduled: true },
+    take: 50,
+  });
+  return NextResponse.json({ count: users.length, users });
+}
