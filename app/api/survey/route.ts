@@ -39,39 +39,63 @@ export async function POST(req: Request) {
   const input = { assets, income, consult } as SurveyInput;
   const branch = decideBranch(input);
 
+  // From here the user has SUCCESSFULLY completed the survey. Persistence and drip
+  // are BEST-EFFORT: a DB outage (e.g. Neon free-tier compute suspended — quota
+  // exhausted) must NEVER turn a finished survey into the user-facing error screen,
+  // and must NEVER block the branch welcome card (the conversion CTA, DB-free).
+  // Same resilience contract as handleFollow (commit 7986149). "Retry from LINE"
+  // can't help during an outage anyway — it would just loop on the same error.
+
   // Was this user already routed? If they re-submit the SAME branch we must NOT
   // push another welcome card or re-fire the drip — that's what produced the
   // "wrong-branch card mixed in" reports (old branch's card lingers in chat).
-  const existing = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { branch: true },
-  });
-  const branchChanged = existing?.branch !== branch;
-  console.log(
-    `[survey] ${userId} -> ${branch} (${assets}/${income}/consult:${consult}) ` +
-      `[was: ${existing?.branch ?? "none"}, changed: ${branchChanged}]`
-  );
+  // If the DB read fails we can't know the prior branch, so we default to sending
+  // the card (branchChanged = true): a possible duplicate card beats no routing.
+  let branchChanged = true;
+  let persisted = false;
+  try {
+    const existing = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { branch: true },
+    });
+    branchChanged = existing?.branch !== branch;
+    console.log(
+      `[survey] ${userId} -> ${branch} (${assets}/${income}/consult:${consult}) ` +
+        `[was: ${existing?.branch ?? "none"}, changed: ${branchChanged}]`
+    );
+    await saveSurvey(userId, input, branch);
+    persisted = true;
+  } catch (e) {
+    console.error(
+      `[survey] persist failed for ${userId} (${branch}) — routing user anyway:`,
+      (e as Error).message
+    );
+  }
 
-  await saveSurvey(userId, input, branch);
-
-  if (!branchChanged) {
-    // identical re-submission: response is recorded, but no new card / drip
+  if (persisted && !branchChanged) {
+    // confirmed identical re-submission: response is recorded, but no new card / drip
     console.log(`[survey] branch unchanged for ${userId}; skipping welcome + drip`);
     return NextResponse.json({ ok: true, branch, scheduled: 0, skipped: "branch_unchanged" });
   }
 
-  // branch is new or changed: clear any prior pending drip (incl. other branches)
-  // before sending the new welcome + scheduling the new drip.
-  await cancelPendingDrip(userId);
-
+  // branch is new/changed (or unknown due to a DB read failure): push the welcome.
+  // The card is DB-free, so it is delivered even while the database is down.
   try {
     await lineClient().pushMessage({ to: userId, messages: buildBranchWelcome(branch) });
   } catch (e) {
     console.warn("[survey] welcome push failed:", (e as Error).message);
   }
 
-  const scheduled = await scheduleDrip(userId, branch);
-  console.log(`[survey] scheduled ${scheduled} drip step(s) for ${userId} (${branch})`);
+  // Drip scheduling is DB-backed -> also best-effort. Clear prior pending drip
+  // (incl. other branches), then schedule the new one.
+  let scheduled = 0;
+  try {
+    await cancelPendingDrip(userId);
+    scheduled = await scheduleDrip(userId, branch);
+    console.log(`[survey] scheduled ${scheduled} drip step(s) for ${userId} (${branch})`);
+  } catch (e) {
+    console.error(`[survey] drip scheduling failed for ${userId} (${branch}):`, (e as Error).message);
+  }
 
-  return NextResponse.json({ ok: true, branch, scheduled });
+  return NextResponse.json({ ok: true, branch, persisted, scheduled });
 }
