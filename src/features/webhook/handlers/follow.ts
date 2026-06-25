@@ -17,19 +17,32 @@ export async function handleFollow(event: FollowEvent): Promise<void> {
     ? await getProfileSafe(userId)
     : { displayName: null, pictureUrl: null };
 
-  // is this an existing member? read BEFORE the upsert (upsert keeps branch)
-  const existing = userId
-    ? await prisma.user.findUnique({ where: { id: userId }, select: { branch: true } })
-    : null;
-  const isMember = existing?.branch === "consultation" || existing?.branch === "school";
-
-  // persist the friend (re-activates if they had blocked before)
+  // DB ops are BEST-EFFORT: the greeting is the funnel's critical first message
+  // and must NEVER be blocked by a database outage (e.g. Neon free-tier compute
+  // suspended). If the read/write fails, treat as a new friend and greet anyway;
+  // the user row is reconciled later (e.g. on survey submit, which upserts).
+  let isMember = false;
   if (userId) {
-    await prisma.user.upsert({
-      where: { id: userId },
-      update: { status: "active", displayName, pictureUrl },
-      create: { id: userId, status: "active", displayName, pictureUrl },
-    });
+    try {
+      // is this an existing member? read BEFORE the upsert (upsert keeps branch)
+      const existing = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { branch: true },
+      });
+      isMember = existing?.branch === "consultation" || existing?.branch === "school";
+
+      // persist the friend (re-activates if they had blocked before)
+      await prisma.user.upsert({
+        where: { id: userId },
+        update: { status: "active", displayName, pictureUrl },
+        create: { id: userId, status: "active", displayName, pictureUrl },
+      });
+    } catch (e) {
+      console.error(
+        "[webhook] follow DB op failed — greeting will still be sent:",
+        (e as Error).message
+      );
+    }
   }
 
   // existing member -> confirm re-registration; otherwise greet as a new friend
